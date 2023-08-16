@@ -5,7 +5,7 @@ file_path_main = "token_main.txt"
 with open(file_path_main, "r") as file:
     token_main = file.read()
 
-file_path_test = "token_main.txt"
+file_path_test = "token_test.txt"
 with open(file_path_test, "r") as file:
     token_test = file.read()
 

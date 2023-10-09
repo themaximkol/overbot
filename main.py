@@ -1,5 +1,8 @@
 import telebot
 from datetime import datetime
+import threading
+import schedule
+import time
 
 from additional import token
 
@@ -40,10 +43,10 @@ users = [
     User("@plushabest", ["persona", "onepiece"], "12-06"),
     User("@Pavlo_D_A", ["persona", "bb", "jojo", "yakuza", "wh"], "08-06"),
     User("@TerribleRick132", ["bcs", "bb", "re", "tlou"], "14-05"),
-    User("@phiIemon", ["persona"]),
+    User("@phiIemon", ["persona"], "09-10"),
     User("@xtiwsu", [], "06-06"),
     User("@r6_raven", [], "18-11"),
-    User("@limbonchik", ["cp"], "18-11"),
+    User("@limbonchik", ["cp"], "09-10"),
 ]
 
 games = {
@@ -198,5 +201,30 @@ def handle_max_command(message):
     bot.reply_to(message, link)
 
 
-bot.send_message("-1001973817859", "1")  # test
-bot.polling(non_stop=True, interval=0)
+def check_birthdays():
+    today = datetime.today().strftime('%d-%m')
+    for user in users:
+        if user.birthday != "01-01" and user.birthday == today:
+            bot.send_message(-1001760116557, f"{user.username} Congrats! It's your birthday today!")
+
+
+def schedule_check():
+    schedule.every().day.at("00:00").do(check_birthdays)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(60)
+
+
+def polling_thread():
+    # bot.send_message("-1001973817859", "1")
+    bot.polling(non_stop=True, interval=0)
+
+
+# Start the polling thread
+polling_thread = threading.Thread(target=polling_thread)
+polling_thread.start()
+
+scheduling_thread = threading.Thread(target=schedule_check)
+scheduling_thread.start()
+scheduling_thread.join()

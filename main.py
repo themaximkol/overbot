@@ -1,13 +1,14 @@
 import telebot
-from background import keep_alive
-from background import token_main, token_test
+from datetime import datetime
+
+from additional import token
 
 
 class User:
-
-    def __init__(self, username, roles=[]):
+    def __init__(self, username, roles=[], birthday="01-01"):
         self.username = username
         self.roles = roles
+        self.birthday = birthday
 
     def has_role(self, role):
         return role in self.roles
@@ -16,25 +17,33 @@ class User:
         return self.username
 
 
-# bot = telebot.TeleBot(token_main)  # OverBot
-bot = telebot.TeleBot(token_test)  # TestBot
+bot = telebot.TeleBot(token)
+
 print("RUNNING")
 
 users = [
-    User("@themaximkol", ["drg", "persona", "bcs", "bb"]),
-    User("@lukasobaka", ["bb", "jojo"]),
-    User("@maosttra", ["over", "drg", "bleach", "persona", "bcs", "bb"]),
-    User("@KnowNoth1ng", ["over", "dota", "drg", "bg3", "bleach", "persona", "kevin", "onepiece", "bcs", "bb", "jojo"]),
-    User("@pink_wild_cherry", ["bleach", "onepiece", "bcs", "bb", "jojo"]),
-    User("@shidler_nm", ["over", "bleach", "kevin", "onepiece", "jojo"]),
-    User("@Doomfisting2004", ["over", "dota", "bleach", "onepiece"]),
-    User("@MedvedNikki", ["bg3", "kevin", "onepiece", "bb"]),
-    User("@nogarD4C", ["over", "dota"]),
-    User("@smillims_0", ["over", "dota", "drg", "bg3", "bleach", "persona", "kevin", "onepiece", "bcs", "bb"]),
-    User("@emprerorr", ["over", "dota"]),
-    User("@plushabest", ["persona"]),
-    User("@Pavlo_D_A", ["persona", "bb", "jojo"]),
-    User("@TerribleRick132", ["bcs", "bb"])
+    User("@themaximkol", ["tlou", "drg", "persona", "bcs", "bb", "cp", "cs", "yakuza"], "19-03"),
+    User("@lukasobaka", ["tlou", "bb", "jojo", "re", "drg", "cp", "cs", "yakuza"], "22-11"),
+    User("@maosttra", ["over", "drg", "bleach", "persona", "bcs", "bb", "re", "tlou", "yakuza", "jojo"], "22-11"),
+    User("@KnowNoth1ng",
+         ["over", "dota", "drg", "bg3", "bleach", "persona", "kevin", "onepiece", "bcs", "bb", "jojo", "re", "cp",
+          "cs", "tlou", "yakuza"], "12-10"),
+    User("@pink_wild_cherry", ["bleach", "onepiece", "bcs", "bb", "jojo"], "05-05"),
+    User("@shidler_nm", ["over", "bleach", "kevin", "onepiece", "jojo", "re", "yakuza"], "24-09"),
+    User("@Doomfisting2004", ["over", "dota", "bleach", "onepiece", "bg3", "drg", "cs", "wh"], "18-11"),
+    User("@MedvedNikki", ["bg3", "kevin", "onepiece", "bb", "cp", "wh", "bleach"], "18-03"),
+    User("@nogarD4C", ["over", "dota"], "16-09"),
+    User("@smillims_0",
+         ["tlou", "over", "dota", "drg", "bg3", "bleach", "persona", "kevin", "onepiece", "bcs", "bb", "re", "cs"],
+         "10-04"),
+    User("@emprerorr", ["over", "dota"], "13-03"),
+    User("@plushabest", ["persona", "onepiece"], "12-06"),
+    User("@Pavlo_D_A", ["persona", "bb", "jojo", "yakuza", "wh"], "08-06"),
+    User("@TerribleRick132", ["bcs", "bb", "re", "tlou"], "14-05"),
+    User("@phiIemon", ["persona"]),
+    User("@xtiwsu", [], "06-06"),
+    User("@r6_raven", [], "18-11"),
+    User("@limbonchik", ["cp"], "18-11"),
 ]
 
 games = {
@@ -49,6 +58,12 @@ games = {
     "bb": "Breaking Bad",
     "bcs": "Better Call Saul",
     "jojo": "Анімедібылы общий сбор",
+    "re": "Resident Evil",
+    "cp": "Cyberpunk 2077",
+    "cs": "Counter Strike",
+    "tlou": "Last of Us",
+    "yakuza": "Yakuza",
+    "wh": "Вахоёбы"
 }
 
 aliases = {
@@ -69,6 +84,11 @@ aliases = {
     "nigerundayo": "jojo",
     "жожоёбы": "jojo",
     "жожойоби": "jojo",
+    "resik": "re",
+    "cp77": "cp",
+    "cyberpunk": "cp",
+    "rgg": "yakuza",
+    "waha": "wh"
 }
 
 
@@ -78,8 +98,6 @@ def get_game_players(game):
 
 def text(game, username, message):
     command_parts = message.text.split()[1:]
-    # if username != "themaximkol":
-    # return ""
 
     if not command_parts:
         response = f"{games[game]}"
@@ -110,28 +128,34 @@ def get_command(game):
 
 @bot.message_handler(commands=list(games.keys()) + list(aliases.keys()))
 def handle_game_command(message):
-    command_parts = message.text.split()
-    command = command_parts[0][1:]
-    real_command = get_command(command)
-    response_text = text(real_command,
-                         username=message.from_user.username,
-                         message=message)
+    try:
+        username = message.from_user.username
 
-    game_players = get_game_players(real_command)
-    mentioned_users = [
-        str(user) for user in game_players
-        if str(user) != "@" + message.from_user.username
-    ]
+        command_parts = message.text.split()
+        command = command_parts[0][1:]
+        real_command = get_command(command)
+        response_text = text(real_command,
+                             username=username,
+                             message=message)
 
-    if len(mentioned_users) > 5:
-        first_response = response_text
-        bot.reply_to(message, first_response)
+        game_players = get_game_players(real_command)
+        mentioned_users = [
+            str(user) for user in game_players
+            if str(user) != "@" + username
+        ]
 
-        remaining_users = mentioned_users[5:]
-        remaining_response = list_to_string(remaining_users)
-        bot.send_message(message.chat.id, remaining_response)
-    else:
-        bot.reply_to(message, response_text)
+        if len(mentioned_users) > 5:
+            first_response = response_text
+            bot.reply_to(message, first_response)
+
+            remaining_users = mentioned_users[5:]
+            remaining_response = list_to_string(remaining_users)
+            bot.send_message(message.chat.id, remaining_response)
+            print(message.chat.id)
+        else:
+            bot.reply_to(message, response_text)
+    except TypeError:
+        return 1
 
 
 @bot.message_handler(commands=['pack'])
@@ -140,23 +164,39 @@ def handle_pack_command(message):
     bot.reply_to(message, msg_url)
 
 
-@bot.message_handler(commands=['money', "manonsha"])
-def handle_manon_command(message):
-    user_id = "146943636"
-    bot.reply_to(message, f'<a href="tg://user?id={user_id}">Манонша</a> дай деняк (693 грн)', parse_mode='HTML')
+@bot.message_handler(commands=['all_birthdays'])
+def handle_all_birthdays(message):
+    sorted_users = sorted(users, key=lambda x: datetime.strptime(x.birthday, '%d-%m'))
+    birthday_list = [f"{user.username}: {user.birthday}" for user in sorted_users if user.birthday != "01-01"]
+    response = "\n".join(birthday_list)
+    bot.reply_to(message, response)
 
 
-@bot.message_handler(commands=["davidka"])
-def handle_davidka_command(message):
-    user_id = "761982075"
-    bot.reply_to(message, f'<a href="tg://user?id={user_id}">Давидка</a>', parse_mode='HTML')
+@bot.message_handler(commands=['next_birthdays'])
+def handle_next_birthdays(message):
+    today = datetime.today()
+    sorted_users = sorted(users, key=lambda x: datetime.strptime(x.birthday, '%d-%m'))
+    next_birthdays = []
+
+    for user in sorted_users:
+        if user.birthday != "01-01":
+            bday = datetime.strptime(user.birthday, '%d-%m').replace(year=today.year)
+            if bday < today:
+                bday = bday.replace(year=today.year + 1)
+            next_birthdays.append((user.username, bday))
+
+    next_birthdays = sorted(next_birthdays, key=lambda x: x[1])
+    next_birthdays = next_birthdays[:3]
+
+    response = "\n".join([f"{name}: {date.strftime('%d-%m')}" for name, date in next_birthdays])
+    bot.reply_to(message, response)
 
 
-@bot.message_handler(commands=['krylo'])
-def handle_krylo_command(message):
-    user_id = "160274125"
-    bot.reply_to(message, f'<a href="tg://user?id={user_id}">Крило</a> уєбан', parse_mode='HTML')
+@bot.message_handler(commands=['nicebotmax', "nicebot", "NICEBOTMAX", "NICEBOT"])
+def handle_max_command(message):
+    link = "https://t.me/c/1760116557/1043332"
+    bot.reply_to(message, link)
 
 
-keep_alive()
+bot.send_message("-1001973817859", "1")  # test
 bot.polling(non_stop=True, interval=0)

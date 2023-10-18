@@ -1,14 +1,14 @@
 import telebot
 from datetime import datetime
-import threading
-import schedule
-import time
 
 from additional import token
 
 
 class User:
-    def __init__(self, username, roles=[], birthday="01-01"):
+    def __init__(self, usr_id="000000000", username="@user", roles=None, birthday="01-01"):
+        if roles is None:
+            roles = []
+        self.id = usr_id
         self.username = username
         self.roles = roles
         self.birthday = birthday
@@ -25,28 +25,30 @@ bot = telebot.TeleBot(token)
 print("RUNNING")
 
 users = [
-    User("@themaximkol", ["tlou", "drg", "persona", "bcs", "bb", "cp", "cs", "yakuza"], "19-03"),
-    User("@lukasobaka", ["tlou", "bb", "jojo", "re", "drg", "cp", "cs", "yakuza"], "22-11"),
-    User("@maosttra", ["over", "drg", "bleach", "persona", "bcs", "bb", "re", "tlou", "yakuza", "jojo"], "22-11"),
-    User("@KnowNoth1ng",
+    User("335762220", "@themaximkol", ["tlou", "drg", "persona", "bcs", "bb", "cp", "cs", "yakuza"], "19-03"),
+    User("428717189", "@lukasobaka", ["tlou", "bb", "jojo", "re", "drg", "cp", "cs", "yakuza"], "22-11"),
+    User("694949879", "@maosttra", ["over", "drg", "bleach", "persona", "bcs", "bb", "re", "tlou", "yakuza", "jojo"],
+         "22-11"),
+    User("160274125", "@KnowNoth1ng",
          ["over", "dota", "drg", "bg3", "bleach", "persona", "kevin", "onepiece", "bcs", "bb", "jojo", "re", "cp",
-          "cs", "tlou", "yakuza"], "12-10"),
-    User("@pink_wild_cherry", ["bleach", "onepiece", "bcs", "bb", "jojo"], "05-05"),
-    User("@shidler_nm", ["over", "bleach", "kevin", "onepiece", "jojo", "re", "yakuza"], "24-09"),
-    User("@Doomfisting2004", ["over", "dota", "bleach", "onepiece", "bg3", "drg", "cs", "wh"], "18-11"),
-    User("@MedvedNikki", ["bg3", "kevin", "onepiece", "bb", "cp", "wh", "bleach"], "18-03"),
-    User("@nogarD4C", ["over", "dota"], "16-09"),
-    User("@smillims_0",
-         ["tlou", "over", "dota", "drg", "bg3", "bleach", "persona", "kevin", "onepiece", "bcs", "bb", "re", "cs"],
+          "cs", "tlou", "yakuza", "jjk", "emul"], "12-10"),
+    User("146943636", "@pink_wild_cherry", ["bleach", "onepiece", "bcs", "bb", "jojo", "jjk"], "05-05"),
+    User("744197313", "@shidler_nm", ["over", "bleach", "kevin", "onepiece", "jojo", "re", "yakuza", "jjk", "emul"],
+         "24-09"),
+    User("761982075", "@Doomfisting2004", ["over", "dota", "bleach", "onepiece", "bg3", "drg", "cs", "wh"], "18-11"),
+    User("87600842", "@MedvedNikki", ["bg3", "kevin", "onepiece", "bb", "cp", "wh", "bleach", "jjk", "emul"], "18-03"),
+    User("628793236", "@Pavlo_D_A", ["persona", "bb", "jojo", "yakuza", "wh", "emul"], "08-06"),
+    User("552126018", "@TerribleRick132", ["bcs", "bb", "re", "tlou", "emul"], "14-05"),
+    User(username="@nogarD4C", roles=["over", "dota"], birthday="16-09"),
+    User("539017344", "@smillims_0",
+         ["tlou", "over", "dota", "drg", "bleach", "persona", "kevin", "onepiece", "bcs", "bb", "re", "cs", "jjk"],
          "10-04"),
-    User("@emprerorr", ["over", "dota"], "13-03"),
-    User("@plushabest", ["persona", "onepiece"], "12-06"),
-    User("@Pavlo_D_A", ["persona", "bb", "jojo", "yakuza", "wh"], "08-06"),
-    User("@TerribleRick132", ["bcs", "bb", "re", "tlou"], "14-05"),
-    User("@phiIemon", ["persona"], "09-10"),
-    User("@xtiwsu", [], "06-06"),
-    User("@r6_raven", [], "18-11"),
-    User("@limbonchik", ["cp"], "09-10"),
+    User("741280840", "@emprerorr", ["over", "dota"], "13-03"),
+    User(username="@plushabest", roles=["persona", "onepiece"], birthday="12-06"),
+    User("306758056", "@phiIemon", ["persona"], "09-10"),
+    User(usr_id="628363051", username="@xtiwsu", birthday="06-06"),
+    User(usr_id="599347025", username="@r6_raven", birthday="18-11"),
+    User("377260960", "@limbonchik", ["cp"], "20-05"),
 ]
 
 games = {
@@ -66,7 +68,9 @@ games = {
     "cs": "Counter Strike",
     "tlou": "Last of Us",
     "yakuza": "Yakuza",
-    "wh": "Вахоёбы"
+    "wh": "Вахоёбы",
+    "jjk": "Jujutsu Kaisen",
+    "emul": "Ретроёбы"
 }
 
 aliases = {
@@ -91,7 +95,10 @@ aliases = {
     "cp77": "cp",
     "cyberpunk": "cp",
     "rgg": "yakuza",
-    "waha": "wh"
+    "waha": "wh",
+    "emuli": "emul",
+    "retro": "emul",
+    "SegaMegadrive": "emul",
 }
 
 
@@ -201,30 +208,5 @@ def handle_max_command(message):
     bot.reply_to(message, link)
 
 
-def check_birthdays():
-    today = datetime.today().strftime('%d-%m')
-    for user in users:
-        if user.birthday != "01-01" and user.birthday == today:
-            bot.send_message(-1001760116557, f"{user.username} Congrats! It's your birthday today!")
-
-
-def schedule_check():
-    schedule.every().day.at("00:00").do(check_birthdays)
-
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
-
-
-def polling_thread():
-    # bot.send_message("-1001973817859", "1")
-    bot.polling(non_stop=True, interval=0)
-
-
-# Start the polling thread
-polling_thread = threading.Thread(target=polling_thread)
-polling_thread.start()
-
-scheduling_thread = threading.Thread(target=schedule_check)
-scheduling_thread.start()
-scheduling_thread.join()
+# bot.send_message("-1001973817859", "1")  # test
+bot.polling(non_stop=True, interval=0)

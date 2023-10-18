@@ -98,7 +98,7 @@ aliases = {
     "waha": "wh",
     "emuli": "emul",
     "retro": "emul",
-    "SegaMegadrive": "emul",
+    "SegaMegadrive": "emul"
 }
 
 

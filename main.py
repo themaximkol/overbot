@@ -1,13 +1,17 @@
 import telebot
+import random
 from datetime import datetime
 
-from additional import token, list_to_string
+from additional import token
 
 
 class User:
-    def __init__(self, usr_id="000000000", username="@user", roles=None, birthday="01-01", emoji="😃"):
+    def __init__(self, usr_id="000000000", username="@user", roles=None, birthday="01-01", emoji=None):
         if roles is None:
             roles = []
+        if emoji is None:
+            emoji = ["😄"]
+
         self.id = usr_id
         self.username = username
         self.roles = roles
@@ -21,7 +25,7 @@ class User:
         return self.id
 
     def print_emoji(self):
-        return self.emoji
+        return random.choice(self.emoji)
 
 
 bot = telebot.TeleBot(token)
@@ -29,32 +33,38 @@ bot = telebot.TeleBot(token)
 print("RUNNING")
 
 users = [
-    User("335762220", "@themaximkol", ["tlou", "drg", "persona", "bcs", "bb", "cp", "cs", "yakuza"], "19-03", "😎"),
-    User("428717189", "@lukasobaka", ["tlou", "bb", "jojo", "re", "drg", "cp", "cs", "yakuza"], "22-11", "🧅"),
+    User("335762220", "@themaximkol", ["tlou", "drg", "persona", "bcs", "bb", "cp", "cs", "yakuza"], "19-03",
+         ["😎", "👨🏻‍💻"]),
+    User("428717189", "@lukasobaka", ["tlou", "bb", "jojo", "re", "drg", "cp", "cs", "yakuza"], "22-11",
+         ["🧅", "🏹", "💅"]),
     User("694949879", "@maosttra", ["over", "drg", "bleach", "persona", "bcs", "bb", "re", "tlou", "yakuza", "jojo"],
-         "22-11", "☠️"),
+         "22-11", ["☠️"]),
     User("160274125", "@KnowNoth1ng",
          ["over", "dota", "drg", "bg3", "bleach", "persona", "kevin", "onepiece", "bcs", "bb", "jojo", "re", "cp",
-          "cs", "tlou", "yakuza", "jjk", "emul"], "12-10", "🤠"),
-    User("146943636", "@pink_wild_cherry", ["bleach", "onepiece", "bcs", "bb", "jojo", "jjk"], "05-05", "🤭"),
+          "cs", "tlou", "yakuza", "jjk", "emul"], "12-10", ["🤠", "👨‍🦰", "🦍", "🦧", "🦅"]),
+    User("146943636", "@pink_wild_cherry", ["bleach", "onepiece", "bcs", "bb", "jojo", "jjk"], "05-05",
+         ["🤭", "🪱", "🧍🏻‍♀️", "🛌", "🐁"]),
     User("744197313", "@shidler_nm", ["over", "bleach", "kevin", "onepiece", "jojo", "re", "yakuza", "jjk", "emul"],
-         "24-09", "👶"),
-    User("761982075", "@Doomfisting2004", ["over", "dota", "bleach", "onepiece", "bg3", "drg", "cs", "wh"], "18-11",
-         "👨🏿"),
+         "24-09", ["👶", "🤓", "🤡", "💀", "😭"]),
+    User("761982075", "@Doomfisting2004", ["over", "dota", "bleach", "onepiece", "bg3", "drg", "cs", "wh", "jojo"],
+         "18-11",
+         ["👨🏿", "🦂", "🦎"]),
     User("87600842", "@MedvedNikki", ["bg3", "kevin", "onepiece", "bb", "cp", "wh", "bleach", "jjk", "emul"], "18-03",
-         "👨‍🦳"),
-    User("628793236", "@Pavlo_D_A", ["persona", "bb", "jojo", "yakuza", "wh", "emul"], "08-06", "🍩"),
-    User("552126018", "@TerribleRick132", ["bcs", "bb", "re", "tlou", "emul"], "14-05", "🍆"),
-    User(username="@nogarD4C", roles=["over", "dota"], birthday="16-09", emoji="🎮"),
+         ["👨‍🦳", "🐻", "🧸", "🔺"]),
+    User("628793236", "@Pavlo_D_A", ["persona", "bb", "jojo", "yakuza", "wh", "emul"], "08-06", ["🍩", "🗿"]),
+    User("552126018", "@TerribleRick132", ["bcs", "bb", "re", "tlou", "emul"], "14-05", ["🍆"]),
+    User(username="@nogarD4C", roles=["over", "dota"], birthday="16-09", emoji=["🎮"]),
     User("539017344", "@smillims_0",
-         ["tlou", "over", "dota", "drg", "bleach", "persona", "kevin", "onepiece", "bcs", "bb", "re", "cs", "jjk"],
-         "10-04", "🚻"),
-    User("741280840", "@emprerorr", ["over", "dota"], "13-03", "🌬"),
-    User("287196610", "@plushabest", ["persona", "onepiece"], "12-06", "🤓"),
-    User("306758056", "@phiIemon", ["persona"], "09-10", "🪠"),
-    User(usr_id="628363051", username="@xtiwsu", birthday="06-06", emoji="🧚‍♂"),
-    User(usr_id="599347025", username="@r6_raven", birthday="18-11", emoji="🖐"),
-    User("377260960", "@limbonchik", ["cp"], "20-05", "🥷"),
+         ["tlou", "over", "dota", "drg", "bleach", "persona", "kevin", "onepiece", "bcs", "bb", "re", "cs", "jjk",
+          "jojo"],
+         "10-04", ["🚻", "🫦", "🥸", "😈", "👽", "👺", "👨‍💻", "🫥", "🥵"]
+         ),
+    User("741280840", "@emprerorr", ["over", "dota"], "13-03", ["🌬"]),
+    User("287196610", "@plushabest", ["persona", "onepiece"], "12-06", ["🤓"]),
+    User("306758056", "@phiIemon", ["persona"], "09-10", ["🪠"]),
+    User(usr_id="628363051", username="@xtiwsu", birthday="06-06", emoji=["🧚‍♂"]),
+    User(usr_id="599347025", username="@r6_raven", birthday="18-11", emoji=["🖐"]),
+    User("377260960", "@limbonchik", ["cp"], "20-05", ["🥷"]),
 ]
 
 games = {
@@ -113,9 +123,8 @@ def text(game, message):
 
     if not command_parts:
         response = f"{games[game]}" + "\n\n"
-
     else:
-        response = list_to_string(command_parts) + "\n\n"
+        response = " ".join(command_parts) + "\n\n"
 
     if response[0].islower():
         return response[0].upper() + response[1:]
@@ -124,37 +133,22 @@ def text(game, message):
 
 @bot.message_handler(commands=list(games.keys()) + list(aliases.keys()))
 def handle_game_command(message):
-    try:
+    command_parts = message.text.split()
+    command = command_parts[0][1:]
+    real_command = aliases.get(command, command)
+    response_text = text(real_command, message=message)
 
-        usr_id = message.from_user.id
+    game_players = [user for user in users if user.has_role(real_command)]
+    all_users = [user for user in game_players if user.id != str(message.from_user.id)]
 
-        command_parts = message.text.split()
-        command = command_parts[0][1:]
-        real_command = aliases.get(command, command)
-        response_text = text(real_command, message=message)
+    first_response = response_text + " ".join(  # space
+        [f'<a href="tg://user?id={user.id}">{user.print_emoji()}</a>' for user in all_users[:5]])
+    bot.reply_to(message, first_response, parse_mode='HTML')
 
-        game_players = [user for user in users if user.has_role(real_command)]
-
-        all_users = [user for user in game_players if str(user) != usr_id]
-
-        if len(all_users) > 5:
-            first_response = response_text + "".join(
-                [f'<a href="tg://user?id={user.id}">{user.print_emoji()}</a>' for user in all_users[:5]])
-
-            bot.reply_to(message, first_response, parse_mode='HTML')
-
-            second_response = "".join(
-                [f'<a href="tg://user?id={user.id}">{user.print_emoji()}</a>' for user in all_users[5:]]) + "."
-
-            bot.send_message(message.chat.id, second_response, parse_mode='HTML')
-
-        else:
-            msg = response_text + "".join(
-                [f'<a href="tg://user?id={user.id}">{user.print_emoji()}</a>' for user in all_users])
-
-            bot.reply_to(message, msg, parse_mode='HTML')
-    except TypeError:
-        return 1
+    if len(all_users) > 5:
+        second_response = "".join(  # empty char
+            [f'<a href="tg://user?id={user.id}">{user.print_emoji()}</a>ㅤ' for user in all_users[5:]])
+        bot.send_message(message.chat.id, second_response[:-1], parse_mode='HTML')
 
 
 @bot.message_handler(commands=['pack'])
@@ -185,13 +179,13 @@ def handle_next_birthdays(message):
             next_birthdays.append((user.username, bday))
 
     next_birthdays = sorted(next_birthdays, key=lambda x: x[1])
-    next_birthdays = next_birthdays[:3]
+    next_birthdays = next_birthdays[:4]
 
     response = "\n".join([f"{name}: {date.strftime('%d-%m')}" for name, date in next_birthdays])
     bot.reply_to(message, response)
 
 
-@bot.message_handler(commands=['nicebotmax', 'nicebot', 'NICEBOTMAX', 'NICEBOT'])
+@bot.message_handler(commands=['bot', 'nicebotmax', 'nicebot', 'NICEBOTMAX', 'NICEBOT'])
 def handle_max_command(message):
     link = "https://t.me/c/1760116557/1043332"
     bot.reply_to(message, link)

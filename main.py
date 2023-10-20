@@ -27,6 +27,12 @@ class User:
     def print_emoji(self):
         return random.choice(self.emoji)
 
+    def print_my_emojis(self):
+        return self.emoji
+
+    def print_my_roles(self):
+        return self.roles
+
 
 bot = telebot.TeleBot(token)
 
@@ -42,17 +48,17 @@ users = [
     User("160274125", "@KnowNoth1ng",
          ["over", "dota", "drg", "bg3", "bleach", "persona", "kevin", "onepiece", "bcs", "bb", "jojo", "re", "cp",
           "cs", "tlou", "yakuza", "jjk", "emul"], "12-10", ["🤠", "👨‍🦰", "🦍", "🦧", "🦅"]),
-    User("146943636", "@pink_wild_cherry", ["bleach", "onepiece", "bcs", "bb", "jojo", "jjk"], "05-05",
+    User("146943636", "@pink_wild_cherry", ["bleach", "onepiece", "bcs", "bb", "jojo", "jjk", "persona"], "05 - 05",
          ["🤭", "🪱", "🧍🏻‍♀️", "🛌", "🐁"]),
     User("744197313", "@shidler_nm", ["over", "bleach", "kevin", "onepiece", "jojo", "re", "yakuza", "jjk", "emul"],
          "24-09", ["👶", "🤓", "🤡", "💀", "😭"]),
     User("761982075", "@Doomfisting2004", ["over", "dota", "bleach", "onepiece", "bg3", "drg", "cs", "wh", "jojo"],
          "18-11",
          ["👨🏿", "🦂", "🦎"]),
-    User("87600842", "@MedvedNikki", ["bg3", "kevin", "onepiece", "bb", "cp", "wh", "bleach", "jjk", "emul"], "18-03",
+    User("87600842", "@MedvedNikki", ["bg3", "kevin", "onepiece", "bb", "cp", "wh", "bleach", "jjk"], "18-03",
          ["👨‍🦳", "🐻", "🧸", "🔺"]),
     User("628793236", "@Pavlo_D_A", ["persona", "bb", "jojo", "yakuza", "wh", "emul"], "08-06", ["🍩", "🗿"]),
-    User("552126018", "@TerribleRick132", ["bcs", "bb", "re", "tlou", "emul"], "14-05", ["🍆"]),
+    User("552126018", "@TerribleRick132", ["bcs", "bb", "re", "tlou", "emul"], "14-05", ["🍆", "🐷"]),
     User(username="@nogarD4C", roles=["over", "dota"], birthday="16-09", emoji=["🎮"]),
     User("539017344", "@smillims_0",
          ["tlou", "over", "dota", "drg", "bleach", "persona", "kevin", "onepiece", "bcs", "bb", "re", "cs", "jjk",
@@ -61,7 +67,7 @@ users = [
          ),
     User("741280840", "@emprerorr", ["over", "dota"], "13-03", ["🌬"]),
     User("287196610", "@plushabest", ["persona", "onepiece"], "12-06", ["🤓"]),
-    User("306758056", "@phiIemon", ["persona"], "09-10", ["🪠"]),
+    User("306758056", "@phiIemon", ["persona"], "09-10", ["🦋"]),
     User(usr_id="628363051", username="@xtiwsu", birthday="06-06", emoji=["🧚‍♂"]),
     User(usr_id="599347025", username="@r6_raven", birthday="18-11", emoji=["🖐"]),
     User("377260960", "@limbonchik", ["cp"], "20-05", ["🥷"]),
@@ -148,12 +154,16 @@ def handle_game_command(message):
     if len(all_users) > 5:
         second_response = "".join(  # empty char
             [f'<a href="tg://user?id={user.id}">{user.print_emoji()}</a>ㅤ' for user in all_users[5:]])
-        bot.send_message(message.chat.id, second_response[:-1], parse_mode='HTML')
+
+        if len(all_users[5:]) >= 2:
+            second_response = second_response[:-1]
+
+        bot.send_message(message.chat.id, second_response, parse_mode='HTML')
 
 
 @bot.message_handler(commands=['pack'])
 def handle_pack_command(message):
-    msg_url = "https://t.me/c/1760116557/1012237"
+    msg_url = "https://t.me/c/2037387850/2558"
     bot.reply_to(message, msg_url)
 
 
@@ -185,10 +195,32 @@ def handle_next_birthdays(message):
     bot.reply_to(message, response)
 
 
-@bot.message_handler(commands=['bot', 'nicebotmax', 'nicebot', 'NICEBOTMAX', 'NICEBOT'])
+@bot.message_handler(commands=['bot', 'BOT', 'nicebotmax', 'nicebot', 'NICEBOTMAX', 'NICEBOT'])
 def handle_max_command(message):
-    link = "https://t.me/c/1760116557/1043332"
+    link = "https://t.me/c/2037387850/2556"
     bot.reply_to(message, link)
+
+
+@bot.message_handler(commands=['emoji', 'my_emoji'])
+def handle_my_emoji(message):
+    usr_id = str(message.from_user.id)
+    user = next((u for u in users if u.id == usr_id), None)
+
+    emojis = user.print_my_emojis()
+    response = "Emoji: \n\n" + ' '.join(emojis)
+
+    bot.reply_to(message, response)
+
+
+@bot.message_handler(commands=['role', 'my_role', 'roles', 'my_roles'])
+def handle_my_roles(message):
+    usr_id = str(message.from_user.id)
+    user = next((u for u in users if u.id == usr_id), None)
+
+    roles = user.print_my_roles()
+    response = "Roles: \n\n" + '  '.join(roles)
+
+    bot.reply_to(message, response)
 
 
 # bot.send_message("-1001973817859", "🍺")  # test

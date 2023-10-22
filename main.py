@@ -1,6 +1,7 @@
 import telebot
 import random
 import sqlite3 as sql
+import emoji as emj
 from datetime import datetime
 
 from additional import token
@@ -10,56 +11,77 @@ print("RUNNING")
 
 
 class User:
-    def __init__(self, usr_id="000000000", username="@user", roles=None, emoji=None):
+    def __init__(self, usr_id="000000000", username="@user", emoji=None):
         if emoji is None:
-            emoji = ["😄"]
+            self.emoji = ["😄"]
+        else:
+            self.emoji = emoji.split(",")
+
         self.id = usr_id
         self.username = username
-        self.roles = roles
-        self.emoji = emoji
-
-    @staticmethod
-    def get_user_by_id(user_id):
-        conn = sql.connect('bot.db')
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT * FROM user WHERE id=?", (user_id,))
-        row = cursor.fetchone()
-        if row:
-            return User(row[0], row[1], row[2])
-
-        cursor.close()
-        conn.close()
-
-    def has_role(self, role):
-        return role in self.roles
 
     def __str__(self):
         return self.id
 
     def print_emoji(self):
+        return random.choice(self.emoji)
 
+    @staticmethod
+    def get_usr_emoji(user_id):
         conn = sql.connect('bot.db')
         cursor = conn.cursor()
+        cursor.execute("SELECT emoji FROM user WHERE id=?", (user_id,))
+        row = cursor.fetchone()[0].split(",")
 
-        cursor.execute("SELECT emoji FROM user WHERE id=?", (self.id,))
-        row = cursor.fetchone()[0].split(", ")
+        cursor.close()
+        conn.close()
+        return row
+
+    @staticmethod
+    def add_usr_emoji(user_id, new_emoji):
+        conn = sql.connect('bot.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM user WHERE id=?", (user_id,))
+        user_exists = cursor.fetchone()
+
+        if user_exists:
+            cursor.execute("SELECT emoji FROM user WHERE id=?", (user_id,))
+            current_emojis = cursor.fetchone()[0]
+
+            emojis_list = current_emojis.split(',')
+
+            if new_emoji not in emojis_list:
+                emojis_list.append(new_emoji)
+                updated_emojis = ','.join(emojis_list)
+
+                cursor.execute("UPDATE user SET emoji=? WHERE id=?", (updated_emojis, user_id))
+                conn.commit()
 
         cursor.close()
         conn.close()
 
-        return random.choice(row)
+    @staticmethod
+    def remove_usr_emoji(user_id, emoji_to_remove):
+        conn = sql.connect('bot.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM user WHERE id=?", (user_id,))
+        user_exists = cursor.fetchone()
 
-    def print_my_roles(self):
-        return self.roles
+        if user_exists:
+            cursor.execute("SELECT emoji FROM user WHERE id=?", (user_id,))
+            current_emojis = cursor.fetchone()[0]
 
+            emojis_list = current_emojis.split(',')
 
-# conn = sql.connect('bot.db')
-# cursor = conn.cursor()
-# cursor.execute("SELECT id, username FROM user WHERE ? IN (SELECT role_id FROM user_roles WHERE user_id=user.id)",
-#                (role_id,))
-# users_data = cursor.fetchall()
-# users = [User(user_id, username) for user_id, username in users_data]
+            if emoji_to_remove in emojis_list:
+                emojis_list.remove(emoji_to_remove)
+                updated_emojis = ','.join(emojis_list)
+
+                cursor.execute("UPDATE user SET emoji=? WHERE id=?", (updated_emojis, user_id))
+                conn.commit()
+
+        cursor.close()
+        conn.close()
 
 
 def load_games_aliases():
@@ -80,6 +102,9 @@ def load_games_aliases():
     return games, aliases
 
 
+games, aliases = load_games_aliases()
+
+
 def get_role_id(role_name, cursor):
     cursor.execute(
         "SELECT role_alias.role_id FROM aliases JOIN role_alias ON aliases.id = role_alias.alias_id WHERE "
@@ -87,9 +112,6 @@ def get_role_id(role_name, cursor):
         (role_name,))
     role_id = cursor.fetchone()
     return role_id[0] if role_id else None
-
-
-games, aliases = load_games_aliases()
 
 
 def text(game, message):
@@ -106,43 +128,45 @@ def text(game, message):
     return response
 
 
-# @bot.message_handler(commands=list(aliases.values()))
-# def handle_game_command(message):
-#     conn = sql.connect('bot.db')
-#     cursor = conn.cursor()
-#
-#     command_parts = message.text.split()
-#     command = command_parts[0][1:]
-#     real_command = aliases.get(command, command)
-#
-#     role_id = get_role_id(real_command, cursor)
-#
-#     cursor.execute("SELECT id, username FROM user WHERE ? IN (SELECT role_id FROM user_roles WHERE user_id=user.id)",
-#                    (role_id,))
-#
-#     users_data = cursor.fetchall()
-#
-#     users = [User(user_id, username) for user_id, username in users_data]
-#     users = [user for user in users if user.id != str(message.from_user.id)]
-#     response_text = text(role_id, message=message)
-#     first_response = response_text + " ".join(
-#         [f'<a href="tg://user?id={user.id}">{user.print_emoji()}</a>' for user in users[:5]]
-#     )
-#
-#     bot.reply_to(message, first_response, parse_mode='HTML')
-#
-#     if len(users) > 5:
-#         second_response = "".join(
-#             [f'<a href="tg://user?id={user.id}">{user.print_emoji()}</a>ㅤ' for user in users[5:]]
-#         )
-#
-#         if len(users[5:]) >= 2:
-#             second_response = second_response[:-1]
-#
-#         bot.send_message(message.chat.id, second_response, parse_mode='HTML')
-#
-#     cursor.close()
-#     conn.close()
+@bot.message_handler(commands=list(aliases.values()))
+def handle_game_command(message):
+    conn = sql.connect('bot.db')
+    cursor = conn.cursor()
+
+    command_parts = message.text.split()
+    command = command_parts[0][1:]
+    real_command = aliases.get(command, command)
+
+    role_id = get_role_id(real_command, cursor)
+
+    cursor.execute(
+        "SELECT id, username, emoji FROM user WHERE ? IN (SELECT role_id FROM user_roles WHERE user_id=user.id)",
+        (role_id,))
+
+    users_data = cursor.fetchall()
+
+    users = [User(user_id, username, emoji) for user_id, username, emoji in users_data if
+             user_id != str(message.from_user.id)]
+
+    response_text = text(role_id, message=message)
+    first_response = response_text + " ".join(
+        [f'<a href="tg://user?id={user.id}">{user.print_emoji()}</a>' for user in users[:5]]
+    )
+
+    bot.reply_to(message, first_response, parse_mode='HTML')
+
+    if len(users) > 5:
+        second_response = "".join(
+            [f'<a href="tg://user?id={user.id}">{user.print_emoji()}</a>ㅤ' for user in users[5:]]
+        )
+
+        if len(users[5:]) >= 2:
+            second_response = second_response[:-1]
+
+        bot.send_message(message.chat.id, second_response, parse_mode='HTML')
+
+    cursor.close()
+    conn.close()
 
 
 @bot.message_handler(commands=['pack'])
@@ -151,13 +175,73 @@ def handle_pack_command(message):
     bot.reply_to(message, msg_url)
 
 
+@bot.message_handler(commands=['emoji', 'my_emoji'])
+def handle_my_emoji(message):
+    conn = sql.connect('bot.db')
+    cursor = conn.cursor()
+
+    emojis = User.get_usr_emoji(message.from_user.id)
+
+    response = "Emoji: \n\n" + ' '.join(emojis)
+
+    bot.reply_to(message, response)
+    cursor.close()
+    conn.close()
+
+
+@bot.message_handler(commands=['addemoji'])
+def handle_add_emoji(message):
+    conn = sql.connect('bot.db')
+    cursor = conn.cursor()
+    new_emj = str(message.text.split()[1])
+
+    if len(new_emj) == 1 and emj.is_emoji(new_emj):
+        User.add_usr_emoji(message.from_user.id, new_emj)
+        reply = f"Emoji {new_emj} added"
+    else:
+        reply = "Нормально пиши"
+
+    bot.reply_to(message, reply)
+    cursor.close()
+    conn.close()
+
+
+@bot.message_handler(commands=['rmvemoji'])
+def handle_rmv_emoji(message):
+    conn = sql.connect('bot.db')
+    cursor = conn.cursor()
+    old_emj = str(message.text.split()[1])
+
+    if len(old_emj) == 1 and emj.is_emoji(old_emj):
+        User.remove_usr_emoji(message.from_user.id, old_emj)
+        reply = f"Emoji {old_emj} removed"
+    else:
+        reply = "Нормально пиши"
+
+    bot.reply_to(message, reply)
+    cursor.close()
+    conn.close()
+
+
 # @bot.message_handler(commands=['all_birthdays'])
 # def handle_all_birthdays(message):
+#     conn = sql.connect('bot.db')
+#     cursor = conn.cursor()
+#     cursor.execute(
+#         "SELECT id, username, emoji FROM user")
+#
+#     users_data = cursor.fetchall()
+#
+#     users = [User(user_id, username, emoji) for user_id, username, emoji in users_data if
+#              user_id]
+#
 #     sorted_users = sorted(users, key=lambda x: datetime.strptime(x.birthday, '%d-%m'))
 #     birthday_list = [f"{user.username}: {user.birthday}" for user in sorted_users if user.birthday != "01-01"]
 #     response = "\n".join(birthday_list)
 #     bot.reply_to(message, response)
 #
+#     cursor.close()
+#     conn.close()
 #
 # @bot.message_handler(commands=['next_birthdays'])
 # def handle_next_birthdays(message):
@@ -179,17 +263,6 @@ def handle_pack_command(message):
 #     bot.reply_to(message, response)
 #
 #
-# @bot.message_handler(commands=['emoji', 'my_emoji'])
-# def handle_my_emoji(message):
-#     usr_id = str(message.from_user.id)
-#     user = next((u for u in users if u.id == usr_id), None)
-#
-#     emojis = user.print_my_emojis()
-#     response = "Emoji: \n\n" + ' '.join(emojis)
-#
-#     bot.reply_to(message, response)
-#
-#
 # @bot.message_handler(commands=['role', 'my_role', 'roles', 'my_roles'])
 # def handle_my_roles(message):
 #     usr_id = str(message.from_user.id)
@@ -199,6 +272,7 @@ def handle_pack_command(message):
 #     response = "Roles: \n\n" + '  '.join(roles)
 #
 #     bot.reply_to(message, response)
+
 
 @bot.message_handler(commands=['bot', 'BOT', 'nicebotmax', 'nicebot', 'NICEBOTMAX', 'NICEBOT'])
 def handle_max_command(message):

@@ -1,10 +1,9 @@
 import telebot
 import random
-import sqlite3 as sql
 import emoji as emj
-from datetime import datetime
 
-from additional import token
+from datetime import datetime
+from additional import token, with_cursor
 
 bot = telebot.TeleBot(token)
 print("RUNNING")
@@ -27,20 +26,18 @@ class User:
         return random.choice(self.emoji)
 
     @staticmethod
-    def get_usr_emoji(user_id):
-        conn = sql.connect('bot.db')
-        cursor = conn.cursor()
+    @with_cursor
+    def get_usr_emoji(cursor, user_id):
+
         cursor.execute("SELECT emoji FROM user WHERE id=?", (user_id,))
         row = cursor.fetchone()[0].split(",")
 
-        cursor.close()
-        conn.close()
         return row
 
     @staticmethod
-    def add_usr_emoji(user_id, new_emoji):
-        conn = sql.connect('bot.db')
-        cursor = conn.cursor()
+    @with_cursor
+    def add_usr_emoji(cursor, user_id, new_emoji):
+
         cursor.execute("SELECT id FROM user WHERE id=?", (user_id,))
         user_exists = cursor.fetchone()
 
@@ -55,15 +52,11 @@ class User:
                 updated_emojis = ','.join(emojis_list)
 
                 cursor.execute("UPDATE user SET emoji=? WHERE id=?", (updated_emojis, user_id))
-                conn.commit()
-
-        cursor.close()
-        conn.close()
 
     @staticmethod
-    def remove_usr_emoji(user_id, emoji_to_remove):
-        conn = sql.connect('bot.db')
-        cursor = conn.cursor()
+    @with_cursor
+    def remove_usr_emoji(cursor, user_id, emoji_to_remove):
+
         cursor.execute("SELECT id FROM user WHERE id=?", (user_id,))
         user_exists = cursor.fetchone()
 
@@ -78,16 +71,10 @@ class User:
                 updated_emojis = ','.join(emojis_list)
 
                 cursor.execute("UPDATE user SET emoji=? WHERE id=?", (updated_emojis, user_id))
-                conn.commit()
-
-        cursor.close()
-        conn.close()
 
 
-def load_games_aliases():
-    conn = sql.connect('bot.db')
-    cursor = conn.cursor()
-
+@with_cursor
+def load_games_aliases(cursor):
     cursor.execute("SELECT * FROM roles")
     rows = cursor.fetchall()
     games = {row[0]: row[1] for row in rows}
@@ -95,9 +82,6 @@ def load_games_aliases():
     cursor.execute("SELECT * FROM aliases")
     rows = cursor.fetchall()
     aliases = {row[0]: row[1] for row in rows}
-
-    cursor.close()
-    conn.close()
 
     return games, aliases
 
@@ -129,10 +113,8 @@ def text(game, message):
 
 
 @bot.message_handler(commands=list(aliases.values()))
-def handle_game_command(message):
-    conn = sql.connect('bot.db')
-    cursor = conn.cursor()
-
+@with_cursor
+def handle_game_command(cursor, message):
     command_parts = message.text.split()
     command = command_parts[0][1:]
     real_command = aliases.get(command, command)
@@ -165,34 +147,19 @@ def handle_game_command(message):
 
         bot.send_message(message.chat.id, second_response, parse_mode='HTML')
 
-    cursor.close()
-    conn.close()
-
-
-@bot.message_handler(commands=['pack'])
-def handle_pack_command(message):
-    msg_url = "https://t.me/c/2037387850/2558"
-    bot.reply_to(message, msg_url)
-
 
 @bot.message_handler(commands=['emoji', 'my_emoji'])
-def handle_my_emoji(message):
-    conn = sql.connect('bot.db')
-    cursor = conn.cursor()
-
+@with_cursor
+def handle_my_emoji(cursor, message):
     emojis = User.get_usr_emoji(message.from_user.id)
-
     response = "Emoji: \n\n" + ' '.join(emojis)
 
     bot.reply_to(message, response)
-    cursor.close()
-    conn.close()
 
 
 @bot.message_handler(commands=['addemoji'])
-def handle_add_emoji(message):
-    conn = sql.connect('bot.db')
-    cursor = conn.cursor()
+@with_cursor
+def handle_add_emoji(cursor, message):
     new_emj = str(message.text.split()[1])
 
     if len(new_emj) == 1 and emj.is_emoji(new_emj):
@@ -202,14 +169,11 @@ def handle_add_emoji(message):
         reply = "Нормально пиши"
 
     bot.reply_to(message, reply)
-    cursor.close()
-    conn.close()
 
 
 @bot.message_handler(commands=['rmvemoji'])
-def handle_rmv_emoji(message):
-    conn = sql.connect('bot.db')
-    cursor = conn.cursor()
+@with_cursor
+def handle_rmv_emoji(cursor, message):
     old_emj = str(message.text.split()[1])
 
     if len(old_emj) == 1 and emj.is_emoji(old_emj):
@@ -219,8 +183,6 @@ def handle_rmv_emoji(message):
         reply = "Нормально пиши"
 
     bot.reply_to(message, reply)
-    cursor.close()
-    conn.close()
 
 
 # @bot.message_handler(commands=['all_birthdays'])
@@ -272,6 +234,11 @@ def handle_rmv_emoji(message):
 #     response = "Roles: \n\n" + '  '.join(roles)
 #
 #     bot.reply_to(message, response)
+
+@bot.message_handler(commands=['pack'])
+def handle_pack_command(message):
+    msg_url = "https://t.me/c/2037387850/2558"
+    bot.reply_to(message, msg_url)
 
 
 @bot.message_handler(commands=['bot', 'BOT', 'nicebotmax', 'nicebot', 'NICEBOTMAX', 'NICEBOT'])

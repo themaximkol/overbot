@@ -2,3 +2,5 @@ token.txt
 tokentest.txt
 .env
 .idea
+bot.db
+bd.py

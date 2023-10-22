@@ -1,5 +1,6 @@
 import telebot
 import random
+import sqlite3 as sql
 from datetime import datetime
 
 from additional import token
@@ -41,16 +42,18 @@ print("RUNNING")
 users = [
     User("335762220", "@themaximkol", ["tlou", "drg", "persona", "bcs", "bb", "cp", "cs", "yakuza"], "19-03",
          ["😎", "👨🏻‍💻"]),
-    User("428717189", "@lukasobaka", ["tlou", "bb", "jojo", "re", "drg", "cp", "cs", "yakuza"], "22-11",
+    User("428717189", "@lukasobaka", ["tlou", "bb", "jojo", "re", "drg", "cp", "cs", "yakuza", "tyler"], "22-11",
          ["🧅", "🏹", "💅"]),
     User("694949879", "@maosttra", ["over", "drg", "bleach", "persona", "bcs", "bb", "re", "tlou", "yakuza", "jojo"],
          "22-11", ["☠️"]),
     User("160274125", "@KnowNoth1ng",
          ["over", "dota", "drg", "bg3", "bleach", "persona", "kevin", "onepiece", "bcs", "bb", "jojo", "re", "cp",
           "cs", "tlou", "yakuza", "jjk", "emul"], "12-10", ["🤠", "👨‍🦰", "🦍", "🦧", "🦅"]),
-    User("146943636", "@pink_wild_cherry", ["bleach", "onepiece", "bcs", "bb", "jojo", "jjk", "persona"], "05 - 05",
+    User("146943636", "@pink_wild_cherry", ["bleach", "onepiece", "bcs", "bb", "jojo", "jjk", "persona", "tyler"],
+         "05 - 05",
          ["🤭", "🪱", "🧍🏻‍♀️", "🛌", "🐁"]),
-    User("744197313", "@shidler_nm", ["over", "bleach", "kevin", "onepiece", "jojo", "re", "yakuza", "jjk", "emul"],
+    User("744197313", "@shidler_nm",
+         ["over", "bleach", "kevin", "onepiece", "jojo", "re", "yakuza", "jjk", "emul", "tyler"],
          "24-09", ["👶", "🤓", "🤡", "💀", "😭"]),
     User("761982075", "@Doomfisting2004", ["over", "dota", "bleach", "onepiece", "bg3", "drg", "cs", "wh", "jojo"],
          "18-11",
@@ -65,12 +68,13 @@ users = [
           "jojo"],
          "10-04", ["🚻", "🫦", "🥸", "😈", "👽", "👺", "👨‍💻", "🫥", "🥵"]
          ),
-    User("741280840", "@emprerorr", ["over", "dota"], "13-03", ["🌬"]),
+    User("741280840", "@emprerorr", ["over", "dota", "tyler"], "13-03", ["🌬"]),
     User("287196610", "@plushabest", ["persona", "onepiece"], "12-06", ["🤓"]),
     User("306758056", "@phiIemon", ["persona"], "09-10", ["🦋"]),
     User(usr_id="628363051", username="@xtiwsu", birthday="06-06", emoji=["🧚‍♂"]),
     User(usr_id="599347025", username="@r6_raven", birthday="18-11", emoji=["🖐"]),
     User("377260960", "@limbonchik", ["cp"], "20-05", ["🥷"]),
+    User("1239375296", "@Smou_Gee90", ["tyler"]),
 ]
 
 games = {
@@ -92,7 +96,8 @@ games = {
     "yakuza": "Yakuza",
     "wh": "Вахоёбы",
     "jjk": "Jujutsu Kaisen",
-    "emul": "Ретроёбы"
+    "emul": "Ретроёбы",
+    "tyler": "Tyler, the Creator",
 }
 
 aliases = {
@@ -224,4 +229,5 @@ def handle_my_roles(message):
 
 
 # bot.send_message("-1001973817859", "🍺")  # test
-bot.polling(non_stop=True, interval=0)
+# bot.polling(non_stop=True, interval=0)
+

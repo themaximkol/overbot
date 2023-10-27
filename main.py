@@ -3,7 +3,7 @@ import random
 import emoji as emj
 
 from datetime import datetime
-from additional import token, with_cursor
+from additional import token, with_cursor, games, aliases
 
 bot = telebot.TeleBot(token)
 print("RUNNING")
@@ -19,9 +19,80 @@ class User:
         self.id = usr_id
         self.username = username
 
-    def __str__(self):
-        return self.id
+    # ---------------------------------------------
+    @staticmethod
+    @with_cursor
+    def get_my_roles(cursor, user_id):
+        cursor.execute("SELECT roles.name FROM roles JOIN user_roles ON roles.id = user_roles.role_id "
+                       "WHERE user_roles.user_id=?", (user_id,))
+        rows = cursor.fetchall()
+        return [row[0] for row in rows]
 
+    @staticmethod
+    @with_cursor
+    def remove_user_role(cursor, user_id, command):
+        # Find the alias_id
+        cursor.execute("SELECT id FROM aliases WHERE alias=?", (command,))
+        alias_id = cursor.fetchone()
+        if not alias_id:
+            return False
+
+        # Find the role_id
+        cursor.execute("SELECT role_id FROM role_alias WHERE alias_id=?", (alias_id[0],))
+        role_id = cursor.fetchone()
+        if not role_id:
+            return False
+
+        # Remove the role
+        cursor.execute("DELETE FROM user_roles WHERE user_id=? AND role_id=?", (user_id, role_id[0]))
+        return True
+
+    @staticmethod
+    @with_cursor
+    def add_user_role(cursor, user_id, command):
+        # Find the alias_id
+        cursor.execute("SELECT id FROM aliases WHERE alias=?", (command,))
+        alias_id = cursor.fetchone()
+        if not alias_id:
+            return False
+
+        # Find the role_id
+        cursor.execute("SELECT role_id FROM role_alias WHERE alias_id=?", (alias_id[0],))
+        role_id = cursor.fetchone()
+        if not role_id:
+            return False
+
+        # Check if the user already has this role
+        cursor.execute("SELECT * FROM user_roles WHERE user_id=? AND role_id=?", (user_id, role_id[0]))
+        existing_entry = cursor.fetchone()
+        if existing_entry:
+            return False
+
+        # Add the role to the user
+        cursor.execute("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", (user_id, role_id[0]))
+        return True
+
+    @staticmethod
+    @with_cursor
+    def get_user_roles_by_username(cursor, username):
+        # Step 1: Check if the user with the given username exists
+        cursor.execute("SELECT id FROM user WHERE username=?", (username,))
+        user_id = cursor.fetchone()
+
+        if not user_id:
+            return None  # User with the provided username doesn't exist
+
+        user_id = user_id[0]  # Extracting the user ID from the result
+
+        # Step 2: Retrieve roles associated with the user
+        cursor.execute("SELECT roles.name FROM roles "
+                       "JOIN user_roles ON roles.id = user_roles.role_id "
+                       "WHERE user_roles.user_id=?", (user_id,))
+
+        rows = cursor.fetchall()
+        return [row[0] for row in rows]  # Return a list of roles
+
+    # ---------------------------------------------
     def print_emoji(self):
         return random.choice(self.emoji)
 
@@ -46,12 +117,15 @@ class User:
             current_emojis = cursor.fetchone()[0]
 
             emojis_list = current_emojis.split(',')
+            if len(emojis_list) < 10:
+                if new_emoji not in emojis_list:
+                    emojis_list.append(new_emoji)
+                    updated_emojis = ','.join(emojis_list)
 
-            if new_emoji not in emojis_list:
-                emojis_list.append(new_emoji)
-                updated_emojis = ','.join(emojis_list)
-
-                cursor.execute("UPDATE user SET emoji=? WHERE id=?", (updated_emojis, user_id))
+                    cursor.execute("UPDATE user SET emoji=? WHERE id=?", (updated_emojis, user_id))
+                    return True
+            return False
+        return False
 
     @staticmethod
     @with_cursor
@@ -65,28 +139,22 @@ class User:
             current_emojis = cursor.fetchone()[0]
 
             emojis_list = current_emojis.split(',')
-
+            print(emojis_list)
+            print(len(emojis_list))
             if emoji_to_remove in emojis_list:
                 emojis_list.remove(emoji_to_remove)
                 updated_emojis = ','.join(emojis_list)
 
                 cursor.execute("UPDATE user SET emoji=? WHERE id=?", (updated_emojis, user_id))
+                return True
+        return False
 
-
-@with_cursor
-def load_games_aliases(cursor):
-    cursor.execute("SELECT * FROM roles")
-    rows = cursor.fetchall()
-    games = {row[0]: row[1] for row in rows}
-
-    cursor.execute("SELECT * FROM aliases")
-    rows = cursor.fetchall()
-    aliases = {row[0]: row[1] for row in rows}
-
-    return games, aliases
-
-
-games, aliases = load_games_aliases()
+    @staticmethod
+    @with_cursor
+    def get_random_users(cursor):
+        cursor.execute("SELECT id FROM user ORDER BY RANDOM() LIMIT 4")
+        users_data = cursor.fetchall()
+        return users_data
 
 
 def get_role_id(role_name, cursor):
@@ -98,12 +166,15 @@ def get_role_id(role_name, cursor):
     return role_id[0] if role_id else None
 
 
+def get_text(message):
+    return message.text.split()[1:] if len(message.text.split()) > 1 else None
+
+
 def text(game, message):
-    command_parts = message.text.split()[1:]
+    command_parts = get_text(message)
 
     if not command_parts:
         response = f"{games[game]}" + "\n\n"
-
     else:
         response = " ".join(command_parts) + "\n\n"
 
@@ -148,9 +219,9 @@ def handle_game_command(cursor, message):
         bot.send_message(message.chat.id, second_response, parse_mode='HTML')
 
 
+# ---------------------------------------------
 @bot.message_handler(commands=['emoji', 'my_emoji'])
-@with_cursor
-def handle_my_emoji(cursor, message):
+def handle_my_emoji(message):
     emojis = User.get_usr_emoji(message.from_user.id)
     response = "Emoji: \n\n" + ' '.join(emojis)
 
@@ -158,12 +229,10 @@ def handle_my_emoji(cursor, message):
 
 
 @bot.message_handler(commands=['addemoji'])
-@with_cursor
-def handle_add_emoji(cursor, message):
+def handle_add_emoji(message):
     new_emj = str(message.text.split()[1])
 
-    if len(new_emj) == 1 and emj.is_emoji(new_emj):
-        User.add_usr_emoji(message.from_user.id, new_emj)
+    if len(new_emj) == 1 and emj.is_emoji(new_emj) and User.add_usr_emoji(message.from_user.id, new_emj):
         reply = f"Emoji {new_emj} added"
     else:
         reply = "Нормально пиши"
@@ -172,18 +241,72 @@ def handle_add_emoji(cursor, message):
 
 
 @bot.message_handler(commands=['rmvemoji'])
-@with_cursor
-def handle_rmv_emoji(cursor, message):
+def handle_rmv_emoji(message):
     old_emj = str(message.text.split()[1])
 
-    if len(old_emj) == 1 and emj.is_emoji(old_emj):
-        User.remove_usr_emoji(message.from_user.id, old_emj)
+    if len(old_emj) == 1 and emj.is_emoji(old_emj) and User.remove_usr_emoji(message.from_user.id, old_emj):
         reply = f"Emoji {old_emj} removed"
     else:
         reply = "Нормально пиши"
 
     bot.reply_to(message, reply)
 
+
+# ---------------------------------------------
+@bot.message_handler(commands=['role', 'roles', 'my_roles', 'my_role'])
+def handle_usr_roles(message):
+    reply = " - ".join(User.get_my_roles(message.from_user.id))
+    bot.reply_to(message, reply)
+
+
+@bot.message_handler(commands=['rmvrole'])
+def handle_rmv_roles(message):
+    success = User.remove_user_role(message.from_user.id, get_text(message)[0])
+    if success:
+        reply = "Role removed"
+    else:
+        reply = "Role removal failed"
+    bot.reply_to(message, reply)
+
+
+@bot.message_handler(commands=['addrole'])
+def handle_add_roles(message):
+    success = User.add_user_role(message.from_user.id, get_text(message)[0])
+    if success:
+        reply = "Role added"
+    else:
+        reply = "Role addition failed"
+    bot.reply_to(message, reply)
+
+
+@bot.message_handler(commands=['viewrole'])
+def handle_view_roles(message):
+    username = get_text(message)
+
+    if username is None:
+        bot.reply_to(message, "Пиши нормально")
+        return
+
+    roles = User.get_user_roles_by_username(username[0])
+
+    if roles is None:
+        bot.reply_to(message, "Пиши нормально")
+    else:
+        bot.reply_to(message, str(username[0]) + ": " + " - ".join(roles))
+
+
+@bot.message_handler(commands=['baka'])
+def handle_baka(message):
+    random_users = [user_id for user_id, in User.get_random_users()]
+    
+    response = "Ви наче шарите\n\n" + " ".join(
+        [f'<a href="tg://user?id={user}">{random.choice(User.get_usr_emoji(user))}</a>' for user in random_users[:5]]
+    )
+
+    bot.reply_to(message, response, parse_mode='HTML')
+
+
+# ---------------------------------------------
 
 # @bot.message_handler(commands=['all_birthdays'])
 # def handle_all_birthdays(message):
@@ -225,15 +348,7 @@ def handle_rmv_emoji(cursor, message):
 #     bot.reply_to(message, response)
 #
 #
-# @bot.message_handler(commands=['role', 'my_role', 'roles', 'my_roles'])
-# def handle_my_roles(message):
-#     usr_id = str(message.from_user.id)
-#     user = next((u for u in users if u.id == usr_id), None)
-#
-#     roles = user.print_my_roles()
-#     response = "Roles: \n\n" + '  '.join(roles)
-#
-#     bot.reply_to(message, response)
+
 
 @bot.message_handler(commands=['pack'])
 def handle_pack_command(message):

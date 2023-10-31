@@ -8,3 +8,6 @@ Trash/
 Trash
 OverBot/Trash/
 /Trash/
+.gitignore
+.Trash/
+birthday.py

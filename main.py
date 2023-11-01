@@ -60,13 +60,14 @@ def handle_game_command(message):
 
 @bot.message_handler(commands=['role', 'viewrole'])
 def handle_usr_roles(message):
+    user = session.query(User).filter(User.id == message.from_user.id).first()
     username = get_text(message)
 
     if username is None:
-        roles = User.get_roles(user_id=message.from_user.id)
-        username = "@" + message.from_user.username
+        username = user.username
+        roles = user.get_roles()
     else:
-        roles = User.get_roles(username=username)
+        roles = user.get_roles(username=username)
 
     if roles is None:
         bot.reply_to(message, "No roles avaible")
@@ -127,21 +128,27 @@ def handle_my_emoji(message):
 @bot.message_handler(commands=['addemoji'])
 def handle_add_emoji(message):
     user = session.query(User).filter(User.id == message.from_user.id).first()
-    new_emj = str(message.text.split()[1])
-    if user.add_emoji(new_emj):
+    new_emj = get_text(message)
+
+    try:
+        user.add_emoji(new_emj)
         bot.reply_to(message, "Added")
-    else:
-        bot.reply_to(message, "Пиши нормально")
+
+    except (SymbolIsntEmojiError, EmojiLimitReachedError, EmojiAlreadyTakenError, UserAlreadyHasEmojiError) as e:
+        bot.reply_to(message, str(e))
 
 
 @bot.message_handler(commands=['rmvemoji'])
 def handle_rmv_emoji(message):
     user = session.query(User).filter(User.id == message.from_user.id).first()
-    old_emj = str(message.text.split()[1])
-    if user.remove_emoji(old_emj):
+    old_emj = get_text(message)
+
+    try:
+        user.remove_emoji(old_emj)
         bot.reply_to(message, "Removed")
-    else:
-        bot.reply_to(message, "Пиши нормально")
+
+    except (SymbolIsntEmojiError, UserDoesntHaveEmojiError) as e:
+        bot.reply_to(message, str(e))
 
 
 @bot.message_handler(commands=['baka'])

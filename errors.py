@@ -1,3 +1,7 @@
+class EmptyInputError(Exception):
+    pass
+
+
 class UserAlreadyHasRoleError(Exception):
     pass
 
@@ -14,9 +18,21 @@ class AliasNotFoundError(Exception):
     pass
 
 
-class EmojiAlreadyExistsError(Exception):
+class UserAlreadyHasEmojiError(Exception):
     pass
 
 
-class EmptyInputError(Exception):
+class UserDoesntHaveEmojiError(Exception):
+    pass
+
+
+class EmojiAlreadyTakenError(Exception):
+    pass
+
+
+class EmojiLimitReachedError(Exception):
+    pass
+
+
+class SymbolIsntEmojiError(Exception):
     pass

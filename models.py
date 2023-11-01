@@ -77,12 +77,11 @@ class User(Base):
 
     emojis = relationship('UserEmoji', back_populates='user')
 
-    @staticmethod
-    def get_roles(username=None, user_id=None):
+    def get_roles(self, username=None):
         if username is not None:
             user = session.query(User).filter_by(username=username).first()
-        elif user_id is not None:
-            user = session.query(User).filter_by(id=user_id).first()
+        elif self.id is not None:
+            user = session.query(User).filter_by(id=self.id).first()
 
         if user:
             return [role.name for role in user.roles]
@@ -140,24 +139,36 @@ class User(Base):
 
     def add_emoji(self, emoji):
         if not emj.is_emoji(emoji):
-            return False
+            raise SymbolIsntEmojiError("Пиши нормально")
+
+        if emoji in [e.emoji for e in self.emojis]:
+            raise UserAlreadyHasEmojiError("Ти шо поц? Баяни - бан")
 
         if session.query(UserEmoji).filter(UserEmoji.emoji == emoji).first():
-            return False
+            raise EmojiAlreadyTakenError("Хтось спиздів це емодзі")
 
-        if len(self.emojis) < 10:
-            new_emoji = UserEmoji(emoji=emoji)
-            self.emojis.append(new_emoji)
-            session.commit()
-            return True
+        if len(self.emojis) > 10:
+            raise EmojiLimitReachedError("Не розганяйся, ліміт 10")
 
-        return False
+        new_emoji = UserEmoji(emoji=emoji)
+        self.emojis.append(new_emoji)
+        session.commit()
 
     def remove_emoji(self, emoji):
-        if not emj.is_emoji(emoji): return False
+        if not emj.is_emoji(emoji):
+            raise SymbolIsntEmojiError("Пиши нормально")
+
+        if emoji not in [e.emoji for e in self.emojis]:
+            raise UserDoesntHaveEmojiError("Ти шо поц? Спочатку додай")
+
+        emoji_record = None
         for e in self.emojis:
             if e.emoji == emoji:
-                self.emojis.remove(e)
-                session.commit()
-                return True
-        return False
+                emoji_record = e
+                break
+
+        if emoji_record is not None:
+            self.emojis.remove(emoji_record)
+            session.delete(emoji_record)
+            session.commit()
+            return True

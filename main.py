@@ -26,53 +26,59 @@ def responce_text(game, message):
     return response
 
 
-@bot.message_handler(commands=Alias.get_all_aliases())
-def handle_game_command(message):
-    command_parts = message.text.split()
-    command = command_parts[0][1:]
+def booter(commands=None):
+    if commands is None:
+        commands = Alias.get_all_aliases()
 
-    user_ids = [user for user in Role.get_users_cmd(command, message.from_user.id) if user != str(message.from_user.id)]
-    role = Role.get_role_name(command)
+    @bot.message_handler(commands=commands)
+    def handle_game_command(message):
+        command_parts = message.text.split()
+        command = command_parts[0][1:]
 
-    response = responce_text(role, message=message)
+        user_ids = [user for user in Role.get_users_cmd(command, message.from_user.id) if
+                    user != str(message.from_user.id)]
+        role = Role.get_role_name(command)
 
-    response += " ".join(
-        [f'<a href="tg://user?id={user_id}">{random.choice(User.get_emojis(user_id=user_id))}</a>' for user_id in
-         user_ids[:5]]
-    )
+        response = responce_text(role, message=message)
 
-    bot.reply_to(message, response, parse_mode='HTML')
+        response += " ".join(
+            [f'<a href="tg://user?id={user_id}">{random.choice(User.get_emojis(user_id=user_id))}</a>' for user_id in
+             user_ids[:5]]
+        )
 
-    if len(user_ids) > 5:
-        while len(user_ids) > 5:
-            user_ids = user_ids[5:]
-            second_response = "".join(
-                [f'<a href="tg://user?id={user_id}">{random.choice(User.get_emojis(user_id=user_id))}</a>ㅤ' for user_id
-                 in
-                 user_ids]
-            )
+        bot.reply_to(message, response, parse_mode='HTML')
 
-            if len(user_ids) >= 2:
-                second_response = second_response[:-1]
+        if len(user_ids) > 5:
+            while len(user_ids) > 5:
+                user_ids = user_ids[5:]
+                second_response = "".join(
+                    [f'<a href="tg://user?id={user_id}">{random.choice(User.get_emojis(user_id=user_id))}</a>ㅤ' for
+                     user_id
+                     in
+                     user_ids]
+                )
 
-            bot.send_message(message.chat.id, second_response, parse_mode='HTML')
+                if len(user_ids) >= 2:
+                    second_response = second_response[:-1]
+
+                bot.send_message(message.chat.id, second_response, parse_mode='HTML')
 
 
 @bot.message_handler(commands=['role', 'viewrole'])
 def handle_usr_roles(message):
     user = session.query(User).filter(User.id == message.from_user.id).first()
     username = get_text(message)
+    try:
+        if username is None:
+            username = user.username
+            roles = user.get_roles()
+        else:
+            roles = user.get_roles(username=username)
 
-    if username is None:
-        username = user.username
-        roles = user.get_roles()
-    else:
-        roles = user.get_roles(username=username)
-
-    if roles is None:
-        bot.reply_to(message, "No roles avaible")
-    else:
         bot.reply_to(message, username + ": " + " - ".join(roles))
+
+    except UserDoesntHaveRoleError as e:
+        bot.reply_to(message, str(e))
 
 
 @bot.message_handler(commands=['addrole'])
@@ -153,7 +159,9 @@ def handle_rmv_emoji(message):
 
 @bot.message_handler(commands=['baka'])
 def handle_baka(message):
-    random_users = random.sample([user.id for user in session.query(User).all()], 4)
+    random_users = random.sample(
+        [user.id for user in session.query(User).all() if user.id != str(message.from_user.id)],
+        4)
 
     response = "Ви наче шарите\n\n" + " ".join(
         [f'<a href="tg://user?id={user_id}">{random.choice(User.get_emojis(user_id=user_id))}</a>' for user_id in
@@ -175,4 +183,21 @@ def handle_max_command(message):
     bot.reply_to(message, link)
 
 
-bot.polling(non_stop=True, interval=0)
+@bot.message_handler(commands=['crtrole', 'c'])
+def handle_max_command(message):
+    if message.from_user.id != 335762220:
+        return
+
+    params = get_text(message).split("-")
+
+    name = params[0]
+    aliases = params[1].split()
+
+    Role.create_new_role(role_name=name, alias_name=aliases)
+    bot.reply_to(message, f"Role '{name}' with aliases '{aliases}' created successfully.")
+    booter(Alias.get_all_aliases())
+
+
+if __name__ == "__main__":
+    booter()
+    bot.polling(non_stop=True, interval=0)

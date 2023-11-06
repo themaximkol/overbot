@@ -50,6 +50,41 @@ class Role(Base):
             role = session.query(Role).join(RoleAlias).filter(RoleAlias.alias_id == alias.id).first()
             return role.name if role else None
 
+    @classmethod
+    def create_new_role(cls, role_name, alias_name):
+        if not role_name or not alias_name:
+            print("Role name and alias name are required.")
+            return
+
+        existing_role = session.query(Role).filter(Role.name == role_name).first()
+        if existing_role:
+            print("Role with this name already exists.")
+            return
+
+        for alias in alias_name:
+            existing_alias = session.query(Alias).filter(Alias.alias == alias).first()
+            if existing_alias:
+                print("Alias with this name already exists.")
+                return
+
+        new_role = Role(name=role_name)
+        session.add(new_role)
+        session.commit()
+
+        for alias in alias_name:
+            print("Alias " + alias)
+            print("Role.id " + str(new_role.id))
+
+            new_alias = Alias(alias=alias)
+            session.add(new_alias)
+            session.commit()
+
+            role_alias = RoleAlias(role_id=new_role.id, alias_id=new_alias.id)
+            session.add(role_alias)
+            session.commit()
+
+        session.commit()
+
 
 class UserRole(Base):
     __tablename__ = 'user_roles'
@@ -74,19 +109,18 @@ class User(Base):
                          primaryjoin='User.id == user_roles.c.user_id',
                          secondaryjoin='Role.id == user_roles.c.role_id',
                          back_populates='users')
-
     emojis = relationship('UserEmoji', back_populates='user')
 
     def get_roles(self, username=None):
         if username is not None:
             user = session.query(User).filter_by(username=username).first()
-        elif self.id is not None:
+        else:
             user = session.query(User).filter_by(id=self.id).first()
 
-        if user:
-            return [role.name for role in user.roles]
-        else:
-            return None
+        if not user:
+            raise UserDoesntHaveRoleError("No roles found")
+
+        return [role.name for role in user.roles]
 
     def add_role(self, alias_name):
         if not alias_name:

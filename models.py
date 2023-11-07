@@ -27,6 +27,25 @@ class Alias(Base):
         aliases = session.query(Alias).all()
         return [alias.alias for alias in aliases]
 
+    @classmethod
+    def create_alias(cls, alias_name, role_alias_name):
+
+        if session.query(Alias).filter(Alias.alias == alias_name).first():
+            raise AliasAlreadyExistsError("Alias with this name already exists")
+
+        alias = Alias(alias=alias_name)
+
+        role = session.query(Role).join(RoleAlias).join(Alias).filter(Alias.alias == role_alias_name).first()
+        if not role:
+            raise RoleNotFoundError("Role not found")
+
+        session.add(alias)
+        session.commit()
+
+        role_alias = RoleAlias(alias_id=alias.id, role_id=role.id)
+        session.add(role_alias)
+        session.commit()
+
 
 class Role(Base):
     __tablename__ = 'roles'
@@ -35,7 +54,7 @@ class Role(Base):
     users = relationship('User', secondary='user_roles', back_populates='roles')
 
     @classmethod
-    def get_users_cmd(cls, alias_name, usr_id):
+    def get_users_cmd(cls, alias_name):
         alias = session.query(Alias).filter(Alias.alias == alias_name).first()
         if alias:
             role = session.query(Role).join(RoleAlias).filter(RoleAlias.alias_id == alias.id).first()
@@ -58,23 +77,18 @@ class Role(Base):
 
         existing_role = session.query(Role).filter(Role.name == role_name).first()
         if existing_role:
-            print("Role with this name already exists.")
-            return
+            raise RoleAlreadyExistsError("Role with this name already exists")
 
         for alias in alias_name:
             existing_alias = session.query(Alias).filter(Alias.alias == alias).first()
             if existing_alias:
-                print("Alias with this name already exists.")
-                return
+                raise AliasAlreadyExistsError("Alias with this name already exists")
 
         new_role = Role(name=role_name)
         session.add(new_role)
         session.commit()
 
         for alias in alias_name:
-            print("Alias " + alias)
-            print("Role.id " + str(new_role.id))
-
             new_alias = Alias(alias=alias)
             session.add(new_alias)
             session.commit()

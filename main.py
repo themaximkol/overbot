@@ -35,12 +35,11 @@ def booter(commands=None):
         command_parts = message.text.split()
         command = command_parts[0][1:]
 
-        user_ids = [user for user in Role.get_users_cmd(command, message.from_user.id) if
+        user_ids = [user for user in Role.get_users_cmd(command) if
                     user != str(message.from_user.id)]
         role = Role.get_role_name(command)
 
-        response = responce_text(role, message=message)
-
+        response = f"<b>{responce_text(role, message=message)}</b>"
         response += " ".join(
             [f'<a href="tg://user?id={user_id}">{random.choice(User.get_emojis(user_id=user_id))}</a>' for user_id in
              user_ids[:5]]
@@ -75,7 +74,8 @@ def handle_usr_roles(message):
         else:
             roles = user.get_roles(username=username)
 
-        bot.reply_to(message, username + ": " + " - ".join(roles))
+        bot.send_message(message.chat.id, f'<b>{username}</b>: {" ".join(roles)}', parse_mode='HTML')
+        bot.delete_message(message.chat.id, message.message_id)
 
     except UserDoesntHaveRoleError as e:
         bot.reply_to(message, str(e))
@@ -88,7 +88,10 @@ def handle_add_roles(message):
 
     try:
         user.add_role(role)
-        bot.reply_to(message, "Role added successfully")
+        bot.send_message(message.chat.id,
+                         f"Role <b>{role}</b> added successfully for <b>{message.from_user.username}</b>",
+                         parse_mode='HTML')
+        bot.delete_message(message.chat.id, message.message_id)
 
     except EmptyInputError as e:
         bot.reply_to(message, str(e))
@@ -105,7 +108,10 @@ def handle_rmv_roles(message):
 
     try:
         user.remove_role(role)
-        bot.reply_to(message, "Role removed successfully")
+        bot.send_message(message.chat.id,
+                         f"Role <b>{role}</b> removed successfully for <b>{message.from_user.username}</b>",
+                         parse_mode='HTML')
+        bot.delete_message(message.chat.id, message.message_id)
 
     except EmptyInputError as e:
         bot.reply_to(message, str(e))
@@ -128,7 +134,8 @@ def handle_my_emoji(message):
     if emojis is None:
         bot.reply_to(message, "No emojis avaible")
     else:
-        bot.reply_to(message, username + ": " + " ".join(emojis))
+        bot.send_message(message.chat.id, f'<b>{username}</b>: {" ".join(emojis)}', parse_mode='HTML')
+        bot.delete_message(message.chat.id, message.message_id)
 
 
 @bot.message_handler(commands=['addemoji'])
@@ -138,7 +145,7 @@ def handle_add_emoji(message):
 
     try:
         user.add_emoji(new_emj)
-        bot.reply_to(message, "Added")
+        bot.reply_to(message, f"Emoji {new_emj} added")
 
     except (SymbolIsntEmojiError, EmojiLimitReachedError, EmojiAlreadyTakenError, UserAlreadyHasEmojiError) as e:
         bot.reply_to(message, str(e))
@@ -151,7 +158,7 @@ def handle_rmv_emoji(message):
 
     try:
         user.remove_emoji(old_emj)
-        bot.reply_to(message, "Removed")
+        bot.reply_to(message, f"Emoji {old_emj} added")
 
     except (SymbolIsntEmojiError, UserDoesntHaveEmojiError) as e:
         bot.reply_to(message, str(e))
@@ -163,28 +170,27 @@ def handle_baka(message):
         [user.id for user in session.query(User).all() if user.id != str(message.from_user.id)],
         4)
 
-    response = "Ви наче шарите\n\n" + " ".join(
+    response = "<b>Ви наче шарите</b>\n\n" + " ".join(
         [f'<a href="tg://user?id={user_id}">{random.choice(User.get_emojis(user_id=user_id))}</a>' for user_id in
-         random_users]
-    )
+         random_users])
 
     bot.reply_to(message, response, parse_mode='HTML')
 
 
 @bot.message_handler(commands=['pack'])
 def handle_pack_command(message):
-    msg_url = "https://t.me/c/2037387850/2558"
-    bot.reply_to(message, msg_url)
+    msg_url = f'<a href="https://t.me/c/2037387850/2558"><b>Sticker Packs</b></a>'
+    bot.reply_to(message, msg_url, parse_mode='HTML')
 
 
 @bot.message_handler(commands=['bot', 'BOT', 'nicebotmax', 'nicebot', 'NICEBOTMAX', 'NICEBOT'])
 def handle_max_command(message):
-    link = "https://t.me/c/2037387850/2556"
-    bot.reply_to(message, link)
+    link = f'<a href="https://t.me/c/2037387850/2556"><b>Bot Commands</b></a>'
+    bot.reply_to(message, link, parse_mode='HTML')
 
 
 @bot.message_handler(commands=['crtrole', 'c'])
-def handle_max_command(message):
+def handle_crt_role(message):
     if message.from_user.id != 335762220:
         return
 
@@ -193,9 +199,48 @@ def handle_max_command(message):
     name = params[0]
     aliases = params[1].split()
 
-    Role.create_new_role(role_name=name, alias_name=aliases)
-    bot.reply_to(message, f"Role '{name}' with aliases '{aliases}' created successfully.")
-    booter(Alias.get_all_aliases())
+    try:
+        Role.create_new_role(role_name=name, alias_name=aliases)
+        # bot.reply_to(message, f"{name} {' '.join(aliases)}")
+        bot.reply_to(message, f'Role <b>{name}</b> was created with aliases <b>{aliases}</b>',
+                     parse_mode='HTML')
+        booter(Alias.get_all_aliases())
+
+    except RoleAlreadyExistsError as e:
+        bot.reply_to(message, str(e))
+    except AliasAlreadyExistsError as e:
+        bot.reply_to(message, str(e))
+
+
+@bot.message_handler(commands=['addalias', 'a'])
+def handle_add_alias(message):
+    if message.from_user.id != 335762220:
+        return
+
+    params = get_text(message).split("-")
+    role_alias_name = params[0]
+    new_aliases = params[1].strip()
+
+    try:
+        Alias.create_alias(new_aliases, role_alias_name)
+
+        bot.reply_to(message, f'Alias <b>{new_aliases}</b> was added to role <b>{role_alias_name}</b>',
+                     parse_mode='HTML')
+        booter(Alias.get_all_aliases())
+
+    except RoleNotFoundError as e:
+        bot.reply_to(message, str(e))
+    except AliasAlreadyExistsError as e:
+        bot.reply_to(message, str(e))
+
+
+@bot.message_handler(commands=['del'])
+def handle_delete_message(message):
+    # Delete the message
+
+    # Send a reply indicating the message was deleted
+
+    bot.delete_message(message.chat.id, message.message_id)
 
 
 if __name__ == "__main__":

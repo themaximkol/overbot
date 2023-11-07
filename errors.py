@@ -14,7 +14,15 @@ class RoleNotFoundError(Exception):
     pass
 
 
+class RoleAlreadyExistsError(Exception):
+    pass
+
+
 class AliasNotFoundError(Exception):
+    pass
+
+
+class AliasAlreadyExistsError(Exception):
     pass
 
 

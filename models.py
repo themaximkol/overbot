@@ -140,7 +140,7 @@ class User(Base):
         if not alias_name:
             raise EmptyInputError("Empty input")
 
-        if self.id in Role.get_users_cmd(alias_name, self.id):
+        if self.id in Role.get_users_cmd(alias_name):
             raise UserAlreadyHasRoleError("You already have this role")
 
         alias = session.query(Alias).filter(Alias.alias == alias_name).first()
@@ -159,7 +159,7 @@ class User(Base):
         if not alias_name:
             raise EmptyInputError("Empty input")
 
-        if self.id not in Role.get_users_cmd(alias_name, self.id):
+        if self.id not in Role.get_users_cmd(alias_name):
             raise UserDoesntHaveRoleError("You don't have this role")
 
         alias = session.query(Alias).filter(Alias.alias == alias_name).first()
@@ -195,7 +195,7 @@ class User(Base):
         if session.query(UserEmoji).filter(UserEmoji.emoji == emoji).first():
             raise EmojiAlreadyTakenError("Хтось спиздів це емодзі")
 
-        if len(self.emojis) > 10:
+        if len(self.emojis) >= 10:
             raise EmojiLimitReachedError("Не розганяйся, ліміт 10")
 
         new_emoji = UserEmoji(emoji=emoji)

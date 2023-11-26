@@ -1,7 +1,7 @@
 import telebot
 import random
 from additional import token
-from models import Alias, Role, User, session
+from models import Alias, Role, User, Donate, session
 from errors import *
 
 bot = telebot.TeleBot(token)
@@ -228,6 +228,37 @@ def add_alias(message):
         bot.reply_to(message, str(e))
     except AliasAlreadyExistsError as e:
         bot.reply_to(message, str(e))
+
+
+@bot.message_handler(commands=['luka'])
+def handle_krylo_command(message):
+    record = session.query(Donate).filter(Donate.id == 1).first()
+    if record.remain <= 0:
+        bot.delete_message(message.chat.id, message.message_id)
+        return
+
+    user_id = "428717189"
+    bot.reply_to(message, f'<a href="tg://user?id={user_id}">Лука</a> даун', parse_mode='HTML')
+    record.remain -= 1
+    session.commit()
+
+
+@bot.message_handler(commands=['addluka'])
+def handle_add_luka_command(message):
+    if message.from_user.id == 335762220:
+        luka = session.query(Donate).filter(Donate.id == 1).first()
+
+        luka.remain += 50
+        session.commit()
+        bot.send_message(message.chat.id, f'Лука вырос на 50. Баланс: {luka.remain}', parse_mode='HTML')
+
+    bot.delete_message(message.chat.id, message.message_id)
+
+
+@bot.message_handler(commands=['checkluka'])
+def handle_krylo_command(message):
+    record = session.query(Donate).filter(Donate.id == 1).first()
+    bot.reply_to(message, f'Баланс: {record.remain}', parse_mode='HTML')
 
 
 if __name__ == "__main__":

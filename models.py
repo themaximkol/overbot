@@ -220,3 +220,10 @@ class User(Base):
             session.delete(emoji_record)
             session.commit()
             return True
+
+
+class Donate(Base):
+    __tablename__ = 'donate'
+    id = Column(Integer, primary_key=True)
+    remain = Column(Integer)
+    name = Column(Integer)

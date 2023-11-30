@@ -132,7 +132,9 @@ def handle_my_emoji(message):
     if emojis is None:
         bot.reply_to(message, "No emojis avaible")
     else:
-        bot.send_message(message.chat.id, f'<b>{username}</b>: {" ".join(emojis)}', parse_mode='HTML')
+        bot.send_message(message.chat.id,
+                         f'<b>{username}</b>: {" ".join([f"<code>{emoji}</code>" for emoji in emojis])}',
+                         parse_mode='HTML')
         bot.delete_message(message.chat.id, message.message_id)
 
 
@@ -231,7 +233,7 @@ def add_alias(message):
 
 
 @bot.message_handler(commands=['luka'])
-def handle_krylo_command(message):
+def luka(message):
     record = session.query(Donate).filter(Donate.id == 1).first()
     if record.remain <= 0:
         bot.delete_message(message.chat.id, message.message_id)
@@ -244,7 +246,7 @@ def handle_krylo_command(message):
 
 
 @bot.message_handler(commands=['addluka'])
-def handle_add_luka_command(message):
+def add_luka(message):
     if message.from_user.id == 335762220:
         luka = session.query(Donate).filter(Donate.id == 1).first()
 
@@ -256,9 +258,24 @@ def handle_add_luka_command(message):
 
 
 @bot.message_handler(commands=['checkluka'])
-def handle_krylo_command(message):
+def view_luka(message):
     record = session.query(Donate).filter(Donate.id == 1).first()
     bot.reply_to(message, f'Баланс: {record.remain}', parse_mode='HTML')
+
+
+@bot.message_handler(commands=['krylo'])
+def krylo(message):
+    # if message.from_user.id != 335762220:
+    #     return
+    user = session.query(User).filter(User.id == 160274125).first()
+
+    try:
+        user.add_role("kevin")
+        bot.send_message(message.chat.id, f"<b>Блудный КРИЛО вернулся</b>", parse_mode='HTML')
+        bot.delete_message(message.chat.id, message.message_id)
+
+    except UserAlreadyHasRoleError:
+        bot.reply_to(message, f"<b>КРИЛО уже вернулся</b>", parse_mode='HTML')
 
 
 if __name__ == "__main__":

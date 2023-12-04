@@ -44,8 +44,10 @@ def booter(commands=None):
             [f'<a href="tg://user?id={user_id}">{random.choice(User.get_emojis(user_id=user_id))}</a>' for user_id in
              user_ids[:5]]
         )
-
-        bot.reply_to(message, response, parse_mode='HTML')
+        if message.reply_to_message:
+            bot.reply_to(message.reply_to_message, response, parse_mode='HTML')
+        else:
+            bot.reply_to(message, response, parse_mode='HTML')
 
         if len(user_ids) > 5:
             while len(user_ids) > 5:
@@ -176,7 +178,10 @@ def baka(message):
         [f'<a href="tg://user?id={user_id}">{random.choice(User.get_emojis(user_id=user_id))}</a>' for user_id in
          random_users])
 
-    bot.reply_to(message, response, parse_mode='HTML')
+    if message.reply_to_message:
+        bot.reply_to(message.reply_to_message, response, parse_mode='HTML')
+    else:
+        bot.reply_to(message, response, parse_mode='HTML')
 
 
 @bot.message_handler(commands=['bot', 'pack', 'BOT', 'nicebotmax', 'nicebot', 'NICEBOTMAX', 'NICEBOT'])
@@ -235,7 +240,7 @@ def add_alias(message):
 @bot.message_handler(commands=['luka'])
 def luka(message):
     record = session.query(Donate).filter(Donate.id == 1).first()
-    if record.remain <= 0:
+    if record.remain <= 0 or message.from_user.id == 428717189:
         bot.delete_message(message.chat.id, message.message_id)
         return
 
@@ -247,12 +252,13 @@ def luka(message):
 
 @bot.message_handler(commands=['addluka'])
 def add_luka(message):
-    if message.from_user.id == 335762220:
-        luka = session.query(Donate).filter(Donate.id == 1).first()
-
-        luka.remain += 50
+    if message.from_user.id == 335762220:  # check if admin
+        amount = int(get_text(message))
+        Luka = session.query(Donate).filter(Donate.id == 1).first()
+        Luka.remain += amount
         session.commit()
-        bot.send_message(message.chat.id, f'Лука вырос на 50. Баланс: {luka.remain}', parse_mode='HTML')
+
+        bot.send_message(message.chat.id, f'Лука вырос на {amount}. Баланс: {Luka.remain}', parse_mode='HTML')
 
     bot.delete_message(message.chat.id, message.message_id)
 
@@ -260,6 +266,40 @@ def add_luka(message):
 @bot.message_handler(commands=['checkluka'])
 def view_luka(message):
     record = session.query(Donate).filter(Donate.id == 1).first()
+    bot.reply_to(message, f'Баланс: {record.remain}', parse_mode='HTML')
+
+
+@bot.message_handler(commands=['nikki'])
+def nikki(message):
+    record = session.query(Donate).filter(Donate.id == 2).first()
+    if record.remain <= 0:
+        bot.delete_message(message.chat.id, message.message_id)
+        return
+
+    user_id = "87600842"
+    replies = ["когда на пенсию", "помни лука не даун", "крило прав, это так бесит, жесть",
+               "хватит спамить, бляяяяяяяяяяяяяяя", "<b>золотой тег</b>"]
+    bot.reply_to(message, f'<a href="tg://user?id={user_id}">Nikki</a> {random.choice(replies)}', parse_mode='HTML')
+    record.remain -= 1
+    session.commit()
+
+
+@bot.message_handler(commands=['addnikki'])
+def add_nikki(message):
+    if message.from_user.id == 335762220:  # check if admin
+        amount = int(get_text(message))
+        Nikki = session.query(Donate).filter(Donate.id == 2).first()
+        Nikki.remain += amount
+        session.commit()
+
+        bot.send_message(message.chat.id, f'Nikki постарел на {amount}. Возраст: {Nikki.remain}', parse_mode='HTML')
+
+    bot.delete_message(message.chat.id, message.message_id)
+
+
+@bot.message_handler(commands=['checknikki'])
+def view_nikki(message):
+    record = session.query(Donate).filter(Donate.id == 2).first()
     bot.reply_to(message, f'Баланс: {record.remain}', parse_mode='HTML')
 
 
@@ -276,6 +316,15 @@ def krylo(message):
 
     except UserAlreadyHasRoleError:
         bot.reply_to(message, f"<b>КРИЛО уже вернулся</b>", parse_mode='HTML')
+
+
+@bot.message_handler(commands=['test'])
+def handle_command(message):
+    if message.reply_to_message:
+        print('YES')
+        print(message.reply_to_message.id)
+    else:
+        print('NO')
 
 
 if __name__ == "__main__":

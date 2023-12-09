@@ -89,7 +89,7 @@ def add_roles(message):
     try:
         user.add_role(role)
         bot.send_message(message.chat.id,
-                         f"Role <b>{role}</b> added successfully for @<b>{message.from_user.username}</b>",
+                         f"Role <b>{Role.get_role_name(message.text.split()[1])}</b> added successfully for @<b>{message.from_user.username}</b>",
                          parse_mode='HTML')
         bot.delete_message(message.chat.id, message.message_id)
 
@@ -109,7 +109,7 @@ def rmv_roles(message):
     try:
         user.remove_role(role)
         bot.send_message(message.chat.id,
-                         f"Role <b>{role}</b> removed successfully for @<b>{message.from_user.username}</b>",
+                         f"Role <b>{Role.get_role_name(message.text.split()[1])}</b> removed successfully for @<b>{message.from_user.username}</b>",
                          parse_mode='HTML')
         bot.delete_message(message.chat.id, message.message_id)
 
@@ -316,15 +316,6 @@ def krylo(message):
 
     except UserAlreadyHasRoleError:
         bot.reply_to(message, f"<b>КРИЛО уже вернулся</b>", parse_mode='HTML')
-
-
-@bot.message_handler(commands=['test'])
-def handle_command(message):
-    if message.reply_to_message:
-        print('YES')
-        print(message.reply_to_message.id)
-    else:
-        print('NO')
 
 
 if __name__ == "__main__":

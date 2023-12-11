@@ -1,3 +1,5 @@
+import random
+
 import emoji as emj
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base
@@ -220,6 +222,21 @@ class User(Base):
             session.delete(emoji_record)
             session.commit()
             return True
+
+    @classmethod
+    def crt_user(cls, username, user_id):
+
+        existing_user = session.query(User).filter(User.id == user_id).first()
+        if existing_user:
+            raise UserAlreadyExists
+
+        new_user = User(id=user_id, username="@" + username)
+        session.add(new_user)
+        session.commit()
+
+        new_user_emoji = UserEmoji(user_id=new_user.id, emoji=random.choice(["😀", "😃", "😄", "😁", "😅", "😊", "☺️"]))
+        session.add(new_user_emoji)
+        session.commit()
 
 
 class Donate(Base):

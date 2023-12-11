@@ -44,3 +44,7 @@ class EmojiLimitReachedError(Exception):
 
 class SymbolIsntEmojiError(Exception):
     pass
+
+
+class UserAlreadyExists(Exception):
+    pass

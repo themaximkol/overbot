@@ -16,7 +16,6 @@ def responce_text(game, message):
     command_parts = get_text(message)
 
     if not command_parts:
-
         response = game + "\n\n"
     else:
         response = command_parts + "\n\n"
@@ -316,6 +315,15 @@ def krylo(message):
 
     except UserAlreadyHasRoleError:
         bot.reply_to(message, f"<b>КРИЛО уже вернулся</b>", parse_mode='HTML')
+
+
+@bot.message_handler(commands=['register'])
+def test(message):
+    try:
+        User.crt_user(username=message.from_user.username, user_id=message.from_user.id)
+        bot.reply_to(message, "Done!", parse_mode='HTML')
+    except UserAlreadyExists as e:
+        bot.delete_message(message.chat.id, message.message_id)
 
 
 if __name__ == "__main__":

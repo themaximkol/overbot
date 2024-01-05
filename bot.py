@@ -1,5 +1,6 @@
 import telebot
 import random
+import os
 from additional import token
 from models import Alias, Role, User, Donate, session
 from errors import *
@@ -383,7 +384,8 @@ def krylo():
     user.add_role("kevin")
 
 
-@bot.message_handler(commands=['danik', "d+y", 'dy', "yura", "danya", "luka", "nikki", "manon", "max", "krylo"])
+@bot.message_handler(
+    commands=['danik', "d+y", 'dy', "yura", "danya", "luka", "nikki", "manon", "krylo", "manonsha"])
 def points(message):
     command = message.text.split()[0][1:]
     if command == "luka":
@@ -396,15 +398,11 @@ def points(message):
         replies = ["когда на пенсию", "помни лука не даун", "крило прав, это так бесит, жесть",
                    "хватит спамить, бляяяяяяяяяяяяяяя", "<b>золотой тег</b>"]
         answer = f'<a href="tg://user?id={user_id}">Nikki</a> {random.choice(replies)}'
-    elif command == "manon":
+    elif command in ("manon", "manonsha"):
         name = "manon"
         user_id = "146943636"
         answer = f'<a href="tg://user?id={user_id}">Манонша</a> дай дєняк'
-    elif command == "max":
-        name = "max"
-        user_id = "335762220"
-        replies = ["смотрел DRZJ??? Это пиздец база", "а когда /krylo?", "а посоветуй яой, ты вроде шаришь", "найс бот"]
-        answer = f'<a href="tg://user?id={user_id}">Макс</a>, {random.choice(replies)}'
+
     elif command in ("danik", "yura", "danya", "dy", "d+y"):
         name = "danik"
         danik_id, yura_id = "539017344", "741280840"
@@ -416,7 +414,7 @@ def points(message):
         user_id = "160274125"
         replies = ["уєбан", "бляяяя заєбал флудити", "соулсгеній", "таскай коробки, не чіпай",
                    "свічку за здоров'я тобі", "го лего форт"]
-        answer = f'<a href="tg://user?id={user_id}">Крило</a>, {random.choice(replies)}'
+        answer = f'<a href="tg://user?id={user_id}">Крило</a> {random.choice(replies)}'
 
     record = session.query(Donate).filter(Donate.name == name).first()
     if record.remain <= 0:
@@ -438,7 +436,7 @@ def addition(message):
         name = "luka"
     elif command == "nikki":
         name = "nikki"
-    elif command == "manon":
+    elif command in ("manon", "manonsha"):
         name = "manon"
     elif command == "max":
         name = "max"
@@ -466,7 +464,7 @@ def addition(message):
         name = "luka"
     elif command == "nikki":
         name = "nikki"
-    elif command == "manon":
+    elif command in ("manon", "manonsha"):
         name = "manon"
     elif command == "max":
         name = "max"
@@ -488,6 +486,41 @@ def register(message):
         bot.reply_to(message, "<b>Done!</b>", parse_mode='HTML')
     except UserAlreadyExists:
         bot.delete_message(message.chat.id, message.message_id)
+
+
+mxcnt = 0
+
+
+@bot.message_handler(commands=['max'])
+def maximkol(message):
+    global mxcnt
+    random_file_path = select_random_file('botphoto/')
+    user_id = "335762220"
+    replies = ["смотрел DRZJ??? Это пиздец база", "а когда /krylo?", "а посоветуй яой, ты вроде шаришь", "найс бот"]
+    answer = f'<a href="tg://user?id={user_id}">Макс</a>, {random.choice(replies)}'
+
+    record = session.query(Donate).filter(Donate.name == "max").first()
+    if record.remain <= 0:
+        bot.delete_message(message.chat.id, message.message_id)
+        return
+
+    if mxcnt > 2:
+        bot.send_photo(message.chat.id, open(random_file_path, "rb"), caption=answer, parse_mode='HTML')
+        mxcnt = 0
+    else:
+        bot.reply_to(message, answer, parse_mode='HTML')
+        mxcnt += 1
+
+    record.remain -= 1
+    session.commit()
+
+
+def select_random_file(folder_path):
+    files = os.listdir(folder_path)
+    files = [f for f in files if os.path.isfile(os.path.join(folder_path, f))]
+    random_file = random.choice(files)
+
+    return os.path.join(folder_path, random_file)
 
 
 if __name__ == "__main__":

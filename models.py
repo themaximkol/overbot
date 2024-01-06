@@ -243,3 +243,4 @@ class Donate(Base):
     id = Column(Integer, primary_key=True)
     remain = Column(Integer)
     name = Column(Integer)
+    cnt = Column(Integer)

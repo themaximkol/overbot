@@ -1,7 +1,6 @@
 import telebot
 import random
-import os
-from additional import token
+from additional import token, select_random_file
 from models import Alias, Role, User, Donate, session
 from errors import *
 
@@ -245,178 +244,81 @@ def add_alias(message):
         bot.reply_to(message, str(e))
 
 
-#
-# @bot.message_handler(commands=['luka'])
-# def luka(message):
-#     record = session.query(Donate).filter(Donate.id == 1).first()
-#     if record.remain <= 0 or message.from_user.id == 428717189:
-#         bot.delete_message(message.chat.id, message.message_id)
-#         return
-#
-#     user_id = "428717189"
-#     bot.reply_to(message, f'<a href="tg://user?id={user_id}">Лука</a> даун', parse_mode='HTML')
-#     record.remain -= 1
-#     session.commit()
-#
-#
-# @bot.message_handler(commands=['addluka'])
-# def add_luka(message):
-#     if message.from_user.id == 335762220:  # check if admin
-#         amount = int(get_text(message))
-#         Luka = session.query(Donate).filter(Donate.id == 1).first()
-#         Luka.remain += amount
-#         session.commit()
-#
-#         bot.send_message(message.chat.id, f'Лука вырос на {amount}. Баланс: {Luka.remain}', parse_mode='HTML')
-#
-#     bot.delete_message(message.chat.id, message.message_id)
-#
-#
-# @bot.message_handler(commands=['checkluka'])
-# def view_luka(message):
-#     record = session.query(Donate).filter(Donate.id == 1).first()
-#     bot.reply_to(message, f'Баланс: {record.remain}', parse_mode='HTML')
-#
-#
-# @bot.message_handler(commands=['nikki'])
-# def nikki(message):
-#     record = session.query(Donate).filter(Donate.id == 2).first()
-#     if record.remain <= 0:
-#         bot.delete_message(message.chat.id, message.message_id)
-#         return
-#
-#     user_id = "87600842"
-#     replies = ["когда на пенсию", "помни лука не даун", "крило прав, это так бесит, жесть",
-#                "хватит спамить, бляяяяяяяяяяяяяяя", "<b>золотой тег</b>"]
-#     bot.reply_to(message, f'<a href="tg://user?id={user_id}">Nikki</a> {random.choice(replies)}', parse_mode='HTML')
-#     record.remain -= 1
-#     session.commit()
-#
-#
-# @bot.message_handler(commands=['addnikki'])
-# def add_nikki(message):
-#     if message.from_user.id == 335762220:  # check if admin
-#         amount = int(get_text(message))
-#         Nikki = session.query(Donate).filter(Donate.id == 2).first()
-#         Nikki.remain += amount
-#         session.commit()
-#
-#         bot.send_message(message.chat.id, f'Nikki постарел на {amount}. Возраст: {Nikki.remain}', parse_mode='HTML')
-#
-#     bot.delete_message(message.chat.id, message.message_id)
-#
-#
-# @bot.message_handler(commands=['checknikki'])
-# def view_nikki(message):
-#     record = session.query(Donate).filter(Donate.id == 2).first()
-#     bot.reply_to(message, f'Баланс: {record.remain}', parse_mode='HTML')
-#
-#
-# @bot.message_handler(commands=['manon'])
-# def manon(message):
-#     record = session.query(Donate).filter(Donate.id == 3).first()
-#     if record.remain <= 0:
-#         bot.delete_message(message.chat.id, message.message_id)
-#         return
-#
-#     user_id = "146943636"
-#     replies = "дай дєняк"
-#     bot.reply_to(message, f'<a href="tg://user?id={user_id}">Манонша</a> {replies}', parse_mode='HTML')
-#     record.remain -= 1
-#     session.commit()
-#
-#
-# @bot.message_handler(commands=['addmanon'])
-# def add_manon(message):
-#     if message.from_user.id == 335762220:  # check if admin
-#         amount = int(get_text(message))
-#         Nikki = session.query(Donate).filter(Donate.id == 3).first()
-#         Nikki.remain += amount
-#         session.commit()
-#
-#         bot.send_message(message.chat.id, f'Манонша заробила {amount}. Баланс: {Nikki.remain}', parse_mode='HTML')
-#
-#     bot.delete_message(message.chat.id, message.message_id)
-#
-#
-# @bot.message_handler(commands=['checkmanon'])
-# def view_manon(message):
-#     record = session.query(Donate).filter(Donate.id == 3).first()
-#     bot.reply_to(message, f'Баланс: {record.remain}', parse_mode='HTML')
-#
-#
-# @bot.message_handler(commands=['max'])
-# def maxon(message):
-#     record = session.query(Donate).filter(Donate.id == 4).first()
-#     if record.remain <= 0:
-#         bot.delete_message(message.chat.id, message.message_id)
-#         return
-#
-#     user_id = "335762220"
-#     replies = ["смотрел DRZJ??? Это пиздец база", "а когда /krylo?", "а посоветуй яой, ты вроде шаришь", "найс бот"]
-#     bot.reply_to(message, f'<a href="tg://user?id={user_id}">Макс</a>, {random.choice(replies)}', parse_mode='HTML')
-#     record.remain -= 1
-#     session.commit()
-#
-#
-# @bot.message_handler(commands=['addmax'])
-# def add_max(message):
-#     if message.from_user.id == 335762220:  # check if admin
-#         amount = int(get_text(message))
-#         Nikki = session.query(Donate).filter(Donate.id == 4).first()
-#         Nikki.remain += amount
-#         session.commit()
-#
-#         bot.send_message(message.chat.id, f'Макс заробив {amount}. Баланс: {Nikki.remain}', parse_mode='HTML')
-#
-#     bot.delete_message(message.chat.id, message.message_id)
-#
-#
-# @bot.message_handler(commands=['checkmax'])
-# def view_max(message):
-#     record = session.query(Donate).filter(Donate.id == 4).first()
-#     bot.reply_to(message, f'Баланс: {record.remain}', parse_mode='HTML')
-#
-
-# @bot.message_handler(commands=['krylo'])
-def krylo():
+def krylo(message):
+    # if message.from_user.id != 335762220:
+    #     return
     user = session.query(User).filter(User.id == 160274125).first()
-    user.add_role("kevin")
+    try:
+        user.add_role("kevin")
+        bot.send_message(message.chat.id, f"<b>Блудный КРИЛО вернулся</b>", parse_mode='HTML')
+        bot.delete_message(message.chat.id, message.message_id)
+    except UserAlreadyHasRoleError:
+        bot.reply_to(message, f"<b>КРИЛО уже вернулся</b>", parse_mode='HTML')
 
 
-@bot.message_handler(
-    commands=['danik', "d+y", 'dy', "yura", "danya", "luka", "nikki", "manon", "krylo", "manonsha"])
-def points(message):
-    command = message.text.split()[0][1:]
+def get_point(command, message):
     if command == "luka":
-        name = "luka"
         user_id = "428717189"
         answer = f'<a href="tg://user?id={user_id}">Лука</a> даун'
+    elif command in ("danik", "yura", "danya", "dy", "d+y"):
+        command = "danik"
+        danik_id, yura_id = "539017344", "741280840"
+        answer = f'<a href="tg://user?id={danik_id}">Даня</a> + <a href="tg://user?id={yura_id}">Юра</a> 🥰'
+    elif command == "krylo":
+        user_id = "160274125"
+        # replies = ["уєбан", "бляяяя заєбал флудити", "соулсгеній", "таскай коробки, не чіпай",
+        #            "свічку за здоров'я тобі", "го лего форт", "<b>КОЛИ ПРИНТЕР?</b>"]
+        replies = ["<b>КОЛИ ПРИНТЕР?</b>"]
+        answer = f'<a href="tg://user?id={user_id}">Крило</a> {random.choice(replies)}'
+        krylo(message)
+    elif command == "max":
+        user_id = "335762220"
+        replies = ["смотрел DRZJ??? Это пиздец база", "а когда /krylo?", "а посоветуй яой, ты вроде шаришь", "найс бот"]
+        answer = f'<a href="tg://user?id={user_id}">Макс</a>, {random.choice(replies)}'
     elif command == "nikki":
-        name = "nikki"
         user_id = "87600842"
         replies = ["когда на пенсию", "помни лука не даун", "крило прав, это так бесит, жесть",
                    "хватит спамить, бляяяяяяяяяяяяяяя", "<b>золотой тег</b>"]
         answer = f'<a href="tg://user?id={user_id}">Nikki</a> {random.choice(replies)}'
     elif command in ("manon", "manonsha"):
-        name = "manon"
         user_id = "146943636"
         answer = f'<a href="tg://user?id={user_id}">Манонша</a> дай дєняк'
 
-    elif command in ("danik", "yura", "danya", "dy", "d+y"):
-        name = "danik"
-        danik_id, yura_id = "539017344", "741280840"
+    return answer, command
 
-        answer = f'<a href="tg://user?id={danik_id}">Даня</a> + <a href="tg://user?id={yura_id}">Юра</a> 🥰'
-    elif command == "krylo":
-        # krylo(message)
-        name = "krylo"
-        user_id = "160274125"
-        replies = ["уєбан", "бляяяя заєбал флудити", "соулсгеній", "таскай коробки, не чіпай",
-                   "свічку за здоров'я тобі", "го лего форт"]
-        answer = f'<a href="tg://user?id={user_id}">Крило</a> {random.choice(replies)}'
 
-    record = session.query(Donate).filter(Donate.name == name).first()
+@bot.message_handler(commands=['max', 'danik', "d+y", 'dy', "yura", "danya", "luka", "krylo", ])
+def maximkol(message):
+    command = message.text.split()[0][1:]
+    answer, command = get_point(command, message=message)
+
+    random_file_path = select_random_file(f'botphoto/{command}')
+    record = session.query(Donate).filter(Donate.name == command).first()
+
+    if record.remain <= 0:
+        bot.delete_message(message.chat.id, message.message_id)
+        return
+
+    if record.cnt > 2:
+        if random_file_path[-3:] == "mp4":
+            bot.send_animation(message.chat.id, open(random_file_path, "rb"), caption=answer, parse_mode='HTML')
+        else:
+            bot.send_photo(message.chat.id, open(random_file_path, "rb"), caption=answer, parse_mode='HTML')
+            record.cnt = 0
+    else:
+        bot.reply_to(message, answer, parse_mode='HTML')
+        record.cnt += 1
+
+    record.remain -= 1
+    session.commit()
+
+
+@bot.message_handler(commands=["nikki", "manon", "manonsha"])
+def points(message):
+    command = message.text.split()[0][1:]
+    answer, command = get_point(command)
+
+    record = session.query(Donate).filter(Donate.name == command).first()
     if record.remain <= 0:
         bot.delete_message(message.chat.id, message.message_id)
         return
@@ -486,41 +388,6 @@ def register(message):
         bot.reply_to(message, "<b>Done!</b>", parse_mode='HTML')
     except UserAlreadyExists:
         bot.delete_message(message.chat.id, message.message_id)
-
-
-mxcnt = 0
-
-
-@bot.message_handler(commands=['max'])
-def maximkol(message):
-    global mxcnt
-    random_file_path = select_random_file('botphoto/')
-    user_id = "335762220"
-    replies = ["смотрел DRZJ??? Это пиздец база", "а когда /krylo?", "а посоветуй яой, ты вроде шаришь", "найс бот"]
-    answer = f'<a href="tg://user?id={user_id}">Макс</a>, {random.choice(replies)}'
-
-    record = session.query(Donate).filter(Donate.name == "max").first()
-    if record.remain <= 0:
-        bot.delete_message(message.chat.id, message.message_id)
-        return
-
-    if mxcnt > 2:
-        bot.send_photo(message.chat.id, open(random_file_path, "rb"), caption=answer, parse_mode='HTML')
-        mxcnt = 0
-    else:
-        bot.reply_to(message, answer, parse_mode='HTML')
-        mxcnt += 1
-
-    record.remain -= 1
-    session.commit()
-
-
-def select_random_file(folder_path):
-    files = os.listdir(folder_path)
-    files = [f for f in files if os.path.isfile(os.path.join(folder_path, f))]
-    random_file = random.choice(files)
-
-    return os.path.join(folder_path, random_file)
 
 
 if __name__ == "__main__":

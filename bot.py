@@ -1,8 +1,9 @@
 import telebot
 import random
 from additional import token, select_random_file
-from models import Alias, Role, User, Donate, session
+from models import Alias, Role, User, Donate, session, func
 from errors import *
+from datetime import datetime
 
 bot = telebot.TeleBot(token)
 print("RUNNING")
@@ -13,9 +14,7 @@ def get_command(message):
 
 
 def get_text(message):
-    if len(message.text.split()) > 1:
-        return " ".join(message.text.split()[1:])
-    return None
+    return " ".join(message.text.split()[1:]) if len(message.text.split()) > 1 else None
 
 
 def responce_text(game, message):
@@ -261,7 +260,7 @@ def krylo():
 
 @bot.message_handler(
     commands=['max', 'danik', "d+y", 'dy', "yura", "danya", "luka", "krylo", "nikki", "manon", "manonsha"])
-def maximkol(message):
+def points(message):
     name = get_command(message)
     if name == "manonsha":
         name = "manon"
@@ -276,15 +275,14 @@ def maximkol(message):
         return
 
     answer = f'<a href="tg://user?id={record.id}">{record.tag_name}</a> {random.choice(record.reply.split("*"))}'
-    if name == "danik":
-        answer = f'<a href="tg://user?id={record.id}">{record.tag_name}</a> + <a href="tg://user?id=741280840">Юра</a> 🥰'
 
-    if record.media and record.cnt > 2:
-        random_file_path = select_random_file(f'botphoto/{name}')
-        if random_file_path[-3:] == "mp4":
-            bot.send_animation(message.chat.id, open(random_file_path, "rb"), caption=answer, parse_mode='HTML')
+    if record.media and (record.cnt > record.cooldown):
+        random_file = select_random_file(f'botphoto/{name}')
+        if random_file[-3:] == "mp4":
+            bot.send_animation(message.chat.id, open(random_file, "rb"), caption=answer, parse_mode='HTML')
+            record.cnt = 0
         else:
-            bot.send_photo(message.chat.id, open(random_file_path, "rb"), caption=answer, parse_mode='HTML')
+            bot.send_photo(message.chat.id, open(random_file, "rb"), caption=answer, parse_mode='HTML')
             record.cnt = 0
     else:
         bot.reply_to(message, answer, parse_mode='HTML')
@@ -295,10 +293,10 @@ def maximkol(message):
 
 
 @bot.message_handler(commands=['add', 'check'])
-def addition(message):
+def manage_points(message):
     command = get_command(message)
     text = get_text(message).split()
-    name, amount = text[0], int(text[1])
+    name = text[0]
 
     if name == "manonsha":
         name = "manon"
@@ -308,14 +306,14 @@ def addition(message):
     if message.from_user.id == 335762220:  # check if admin
         if user := session.query(Donate).filter(Donate.name == name).first():
             if command == "add":
+                amount = int(text[1])
                 user.remain += amount
                 session.commit()
                 bot.send_message(message.chat.id, f'<b>{name} плюс {amount}. Баланс: {user.remain}</b>',
                                  parse_mode='HTML')
+                bot.delete_message(message.chat.id, message.message_id)
             elif command == "check":
                 bot.reply_to(message, f'Баланс: {user.remain}', parse_mode='HTML')
-
-    bot.delete_message(message.chat.id, message.message_id)
 
 
 @bot.message_handler(commands=['register'])
@@ -325,6 +323,51 @@ def register(message):
         bot.reply_to(message, "<b>Done!</b>", parse_mode='HTML')
     except UserAlreadyExists:
         bot.delete_message(message.chat.id, message.message_id)
+
+
+@bot.message_handler(commands=['next_birthdays'])
+def next_birthdays(message):
+    all_users = session.query(User).all()
+    today = datetime.now()
+    next_bd = []
+
+    for user in all_users:
+        if user.birthday is None:
+            continue
+
+        b_day, b_month = map(int, user.birthday.split('-'))
+        next_birthday = datetime(year=today.year, month=b_month, day=b_day)
+
+        if next_birthday < today:
+            next_birthday = datetime(year=today.year + 1, month=b_month, day=b_day)
+
+        next_bd.append((user, next_birthday))
+
+    next_bd.sort(key=lambda x: x[1])
+
+    output = "<b>Next Birthdays:</b> \n\n" + "\n".join(
+        [f"{user.username} - {birthday.strftime('%d-%m')}" for user, birthday in next_bd[:4]])
+
+    bot.send_message(message.chat.id, output, parse_mode='HTML')
+
+
+@bot.message_handler(commands=['all_birthdays'])
+def all_birthdays(message):
+    all_users = session.query(User).all()
+    all_bd = []
+
+    for user in all_users:
+        if user.birthday is not None:
+            b_day, b_month = map(int, user.birthday.split('-'))
+            birthday_date = datetime(year=1, month=b_month, day=b_day)  # Year doesn't matter for sorting
+            all_bd.append((user, birthday_date))
+
+    all_bd.sort(key=lambda x: x[1])
+    all_bd = [(user, date.strftime('%d-%m')) for user, date in all_bd]
+
+    output = "<b>All Birthdays:</b> \n\n" + "\n".join([f"{user.username} - {birthday}" for user, birthday in all_bd])
+
+    bot.send_message(message.chat.id, output, parse_mode='HTML')
 
 
 if __name__ == "__main__":

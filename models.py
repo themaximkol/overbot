@@ -1,6 +1,6 @@
 import random
 import emoji as emj
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Boolean, func
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base
 from errors import *
 
@@ -125,6 +125,7 @@ class User(Base):
                          secondaryjoin='Role.id == user_roles.c.role_id',
                          back_populates='users')
     emojis = relationship('UserEmoji', back_populates='user')
+    birthday = Column(String)
 
     def get_roles(self, username=None):
         if username is not None:
@@ -247,3 +248,4 @@ class Donate(Base):
     media = Column(Boolean)
     reply = Column(String)
     tag_name = Column(String)
+    cooldown = Column(Integer)

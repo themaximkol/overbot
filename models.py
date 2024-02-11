@@ -1,6 +1,6 @@
 import random
 import emoji as emj
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base
 from errors import *
 
@@ -244,3 +244,6 @@ class Donate(Base):
     remain = Column(Integer)
     name = Column(Integer)
     cnt = Column(Integer)
+    media = Column(Boolean)
+    reply = Column(String)
+    tag_name = Column(String)

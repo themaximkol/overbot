@@ -259,50 +259,28 @@ def krylo():
         return
 
 
-def get_point(command):
-    if command == "luka":
-        user_id = "428717189"
-        answer = f'<a href="tg://user?id={user_id}">Лука</a> даун'
-    elif command in ("danik", "yura", "danya", "dy", "d+y"):
-        command = "danik"
-        danik_id, yura_id = "539017344", "741280840"
-        answer = f'<a href="tg://user?id={danik_id}">Даня</a> + <a href="tg://user?id={yura_id}">Юра</a> 🥰'
-    elif command == "krylo":
-        user_id = "160274125"
-        # replies = ["уєбан", "бляяяя заєбал флудити", "соулсгеній", "таскай коробки, не чіпай",
-        #            "свічку за здоров'я тобі", "го лего форт", "<b>КОЛИ ПРИНТЕР?</b>"]
-        replies = ["<b>КОЛИ ПРИНТЕР?</b>"]
-        answer = f'<a href="tg://user?id={user_id}"><b>КРИЛО</b></a> {random.choice(replies)}'
-        krylo()
-    elif command == "max":
-        user_id = "335762220"
-        replies = ["смотрел DRZJ??? Это пиздец база", "а когда /krylo?", "а посоветуй яой, ты вроде шаришь", "найс бот"]
-        answer = f'<a href="tg://user?id={user_id}">Макс</a>, {random.choice(replies)}'
-    elif command == "nikki":
-        user_id = "87600842"
-        replies = ["когда на пенсию", "помни лука не даун", "крило прав, это так бесит, жесть",
-                   "хватит спамить, бляяяяяяяяяяяяяяя", "<b>золотой тег</b>"]
-        answer = f'<a href="tg://user?id={user_id}">Nikki</a> {random.choice(replies)}'
-    elif command in ("manon", "manonsha"):
-        user_id = "146943636"
-        answer = f'<a href="tg://user?id={user_id}">Манонша</a> дай дєняк'
-
-    return answer, command
-
-
-@bot.message_handler(commands=['max', 'danik', "d+y", 'dy', "yura", "danya", "luka", "krylo", ])
+@bot.message_handler(
+    commands=['max', 'danik', "d+y", 'dy', "yura", "danya", "luka", "krylo", "nikki", "manon", "manonsha"])
 def maximkol(message):
-    command = message.text.split()[0][1:]
-    answer, command = get_point(command)
+    name = get_command(message)
+    if name == "manonsha":
+        name = "manon"
+    elif name in ("yura", "danya", "dy", "d+y"):
+        name = "danik"
+    elif name == "krylo":
+        krylo()
 
-    random_file_path = select_random_file(f'botphoto/{command}')
-    record = session.query(Donate).filter(Donate.name == command).first()
-
+    record = session.query(Donate).filter(Donate.name == name).first()
     if record.remain <= 0:
         bot.delete_message(message.chat.id, message.message_id)
         return
 
-    if record.cnt > 2:
+    answer = f'<a href="tg://user?id={record.id}">{record.tag_name}</a> {random.choice(record.reply.split("*"))}'
+    if name == "danik":
+        answer = f'<a href="tg://user?id={record.id}">{record.tag_name}</a> + <a href="tg://user?id=741280840">Юра</a> 🥰'
+
+    if record.media and record.cnt > 2:
+        random_file_path = select_random_file(f'botphoto/{name}')
         if random_file_path[-3:] == "mp4":
             bot.send_animation(message.chat.id, open(random_file_path, "rb"), caption=answer, parse_mode='HTML')
         else:
@@ -312,21 +290,6 @@ def maximkol(message):
         bot.reply_to(message, answer, parse_mode='HTML')
         record.cnt += 1
 
-    record.remain -= 1
-    session.commit()
-
-
-@bot.message_handler(commands=["nikki", "manon", "manonsha"])
-def points(message):
-    command = message.text.split()[0][1:]
-    answer, command = get_point(command)
-
-    record = session.query(Donate).filter(Donate.name == command).first()
-    if record.remain <= 0:
-        bot.delete_message(message.chat.id, message.message_id)
-        return
-
-    bot.reply_to(message, answer, parse_mode='HTML')
     record.remain -= 1
     session.commit()
 

@@ -8,8 +8,14 @@ bot = telebot.TeleBot(token)
 print("RUNNING")
 
 
+def get_command(message):
+    return message.text.split()[0][1:]
+
+
 def get_text(message):
-    return " ".join(message.text.split()[1:]) if len(message.text.split()) > 1 else None
+    if len(message.text.split()) > 1:
+        return " ".join(message.text.split()[1:])
+    return None
 
 
 def responce_text(game, message):
@@ -244,19 +250,16 @@ def add_alias(message):
         bot.reply_to(message, str(e))
 
 
-def krylo(message):
-    # if message.from_user.id != 335762220:
-    #     return
+def krylo():
     user = session.query(User).filter(User.id == 160274125).first()
     try:
         user.add_role("kevin")
-        bot.send_message(message.chat.id, f"<b>Блудный КРИЛО вернулся</b>", parse_mode='HTML')
-        bot.delete_message(message.chat.id, message.message_id)
-    except UserAlreadyHasRoleError:
-        bot.reply_to(message, f"<b>КРИЛО уже вернулся</b>", parse_mode='HTML')
+        user.remove_role("tlou")
+    except UserAlreadyHasRoleError or UserDoesntHaveRoleError:
+        return
 
 
-def get_point(command, message):
+def get_point(command):
     if command == "luka":
         user_id = "428717189"
         answer = f'<a href="tg://user?id={user_id}">Лука</a> даун'
@@ -269,8 +272,8 @@ def get_point(command, message):
         # replies = ["уєбан", "бляяяя заєбал флудити", "соулсгеній", "таскай коробки, не чіпай",
         #            "свічку за здоров'я тобі", "го лего форт", "<b>КОЛИ ПРИНТЕР?</b>"]
         replies = ["<b>КОЛИ ПРИНТЕР?</b>"]
-        answer = f'<a href="tg://user?id={user_id}">Крило</a> {random.choice(replies)}'
-        krylo(message)
+        answer = f'<a href="tg://user?id={user_id}"><b>КРИЛО</b></a> {random.choice(replies)}'
+        krylo()
     elif command == "max":
         user_id = "335762220"
         replies = ["смотрел DRZJ??? Это пиздец база", "а когда /krylo?", "а посоветуй яой, ты вроде шаришь", "найс бот"]
@@ -290,7 +293,7 @@ def get_point(command, message):
 @bot.message_handler(commands=['max', 'danik', "d+y", 'dy', "yura", "danya", "luka", "krylo", ])
 def maximkol(message):
     command = message.text.split()[0][1:]
-    answer, command = get_point(command, message=message)
+    answer, command = get_point(command)
 
     random_file_path = select_random_file(f'botphoto/{command}')
     record = session.query(Donate).filter(Donate.name == command).first()
@@ -328,57 +331,28 @@ def points(message):
     session.commit()
 
 
-@bot.message_handler(commands=['add'])
+@bot.message_handler(commands=['add', 'check'])
 def addition(message):
-    whole = get_text(message).split()
-    command = whole[0]
-    amount = int(whole[1])
+    command = get_command(message)
+    text = get_text(message).split()
+    name, amount = text[0], int(text[1])
 
-    if command == "luka":
-        name = "luka"
-    elif command == "nikki":
-        name = "nikki"
-    elif command in ("manon", "manonsha"):
+    if name == "manonsha":
         name = "manon"
-    elif command == "max":
-        name = "max"
-    elif command in ("danik", "yura", "danya", "dy", "d+y"):
+    elif name in ("yura", "danya", "dy", "d+y"):
         name = "danik"
-    elif command == "krylo":
-        name = "krylo"
-    else:
-        return
 
     if message.from_user.id == 335762220:  # check if admin
-
-        Polz = session.query(Donate).filter(Donate.name == name).first()
-        Polz.remain += amount
-        session.commit()
-        bot.send_message(message.chat.id, f'{name} плюс {amount}. Баланс: {Polz.remain}', parse_mode='HTML')
+        if user := session.query(Donate).filter(Donate.name == name).first():
+            if command == "add":
+                user.remain += amount
+                session.commit()
+                bot.send_message(message.chat.id, f'<b>{name} плюс {amount}. Баланс: {user.remain}</b>',
+                                 parse_mode='HTML')
+            elif command == "check":
+                bot.reply_to(message, f'Баланс: {user.remain}', parse_mode='HTML')
 
     bot.delete_message(message.chat.id, message.message_id)
-
-
-@bot.message_handler(commands=['check'])
-def addition(message):
-    command = get_text(message)
-    if command == "luka":
-        name = "luka"
-    elif command == "nikki":
-        name = "nikki"
-    elif command in ("manon", "manonsha"):
-        name = "manon"
-    elif command == "max":
-        name = "max"
-    elif command in ("danik", "yura", "danya", "dy", "d+y"):
-        name = "danik"
-    elif command == "krylo":
-        name = "krylo"
-    else:
-        return
-
-    record = session.query(Donate).filter(Donate.name == name).first()
-    bot.reply_to(message, f'Баланс: {record.remain}', parse_mode='HTML')
 
 
 @bot.message_handler(commands=['register'])

@@ -1,7 +1,7 @@
 import telebot
 import random
 from additional import token, select_random_file
-from models import Alias, Role, User, Donate, session, func
+from models import Alias, Role, User, Donate, session
 from errors import *
 from datetime import datetime
 
@@ -9,15 +9,15 @@ bot = telebot.TeleBot(token)
 print("RUNNING")
 
 
-def get_command(message):
+def get_command(message) -> str:
     return message.text.split()[0][1:]
 
 
-def get_text(message):
+def get_text(message) -> str:
     return " ".join(message.text.split()[1:]) if len(message.text.split()) > 1 else None
 
 
-def responce_text(game, message):
+def responce_text(game, message) -> str:
     command_parts = get_text(message)
 
     if not command_parts:
@@ -249,13 +249,19 @@ def add_alias(message):
         bot.reply_to(message, str(e))
 
 
-def krylo():
-    user = session.query(User).filter(User.id == 160274125).first()
+def krylo() -> None:
+    user = session.query(User).filter(User.id == "160274125").first()
     try:
         user.add_role("kevin")
+        session.commit()
+    except UserAlreadyHasRoleError:
+        pass
+
+    try:
         user.remove_role("tlou")
-    except UserAlreadyHasRoleError or UserDoesntHaveRoleError:
-        return
+        session.commit()
+    except  UserDoesntHaveRoleError:
+        pass
 
 
 @bot.message_handler(
@@ -303,17 +309,16 @@ def manage_points(message):
     elif name in ("yura", "danya", "dy", "d+y"):
         name = "danik"
 
-    if message.from_user.id == 335762220:  # check if admin
-        if user := session.query(Donate).filter(Donate.name == name).first():
-            if command == "add":
-                amount = int(text[1])
-                user.remain += amount
-                session.commit()
-                bot.send_message(message.chat.id, f'<b>{name} плюс {amount}. Баланс: {user.remain}</b>',
-                                 parse_mode='HTML')
-                bot.delete_message(message.chat.id, message.message_id)
-            elif command == "check":
-                bot.reply_to(message, f'Баланс: {user.remain}', parse_mode='HTML')
+    if user := session.query(Donate).filter(Donate.name == name).first():
+        if command == "add" and (message.from_user.id == 335762220):  # check if admin:
+            amount = int(text[1])
+            user.remain += amount
+            session.commit()
+            bot.send_message(message.chat.id, f'<b>{name} плюс {amount}. Баланс: {user.remain}</b>',
+                             parse_mode='HTML')
+            bot.delete_message(message.chat.id, message.message_id)
+        elif command == "check":
+            bot.reply_to(message, f'Баланс: {user.remain}', parse_mode='HTML')
 
 
 @bot.message_handler(commands=['register'])
@@ -370,6 +375,12 @@ def all_birthdays(message):
     bot.send_message(message.chat.id, output, parse_mode='HTML')
 
 
+@bot.message_handler(commands=['test'])
+def test(message):
+
+    bot.send_message(message.chat.id, "🤨")
+
+
 if __name__ == "__main__":
-    booter()
+    # booter()
     bot.polling(non_stop=True, interval=0)

@@ -1,7 +1,7 @@
 import telebot
 import random
 from additional import token, select_random_file
-from models import Alias, Role, User, Donate, session
+from models import Alias, Role, User, Donate, RoleAlias, session
 from errors import *
 from datetime import datetime
 
@@ -33,6 +33,7 @@ def responce_text(game, message) -> str:
 def booter(commands=None):
     if commands is None:
         commands = Alias.get_all_aliases()
+        print("a")
 
     @bot.message_handler(commands=commands)
     def call_role(message):
@@ -196,9 +197,10 @@ def baka(message):
         bot.reply_to(message, response, parse_mode='HTML')
 
 
-@bot.message_handler(commands=['bot', 'pack', 'BOT', 'nicebotmax', 'nicebot', 'NICEBOTMAX', 'NICEBOT'])
+@bot.message_handler(
+    commands=['bot', 'pack', 'donate', 'donat', 'BOT', 'nicebotmax', 'nicebot', 'NICEBOTMAX', 'NICEBOT'])
 def nicebot(message):
-    link = f'<a href="https://t.me/c/2037387850/2556"><b>Bot Commands</b></a>  |  <a href="https://t.me/c/2037387850/2558"><b>Sticker Packs</b></a>'
+    link = f'<a href="https://t.me/c/2037387850/157832"><b>Donate</b></a>  |  <a href="https://t.me/c/2037387850/2556"><b>Bot Commands</b></a>  |  <a href="https://t.me/c/2037387850/2558"><b>Sticker Packs</b></a>'
     bot.reply_to(message, link, parse_mode='HTML')
 
 
@@ -237,8 +239,9 @@ def add_alias(message):
 
     try:
         Alias.create_alias(new_aliases, role_alias_name)
+        role = session.query(Role).join(RoleAlias).join(Alias).filter(Alias.alias == role_alias_name).first()
 
-        bot.send_message(message.chat.id, f'Alias <b>/{new_aliases}</b> was added to role <b>{role_alias_name}</b>',
+        bot.send_message(message.chat.id, f'Alias <b>/{new_aliases}</b> was added to role <b>{role.name}</b>',
                          parse_mode='HTML')
         bot.delete_message(message.chat.id, message.message_id)
         booter(Alias.get_all_aliases())
@@ -265,7 +268,7 @@ def krylo() -> None:
 
 
 @bot.message_handler(
-    commands=['max', 'danik', "d+y", 'dy', "yura", "danya", "luka", "krylo", "nikki", "manon", "manonsha"])
+    commands=['max', 'danik', "d+y", 'dy', "yura", "danya", "luka", "krylo", "nikki", "manon", "manonsha", "shidler"])
 def points(message):
     name = get_command(message)
     if name == "manonsha":
@@ -377,10 +380,9 @@ def all_birthdays(message):
 
 @bot.message_handler(commands=['test'])
 def test(message):
-
     bot.send_message(message.chat.id, "🤨")
 
 
 if __name__ == "__main__":
-    # booter()
+    booter()
     bot.polling(non_stop=True, interval=0)

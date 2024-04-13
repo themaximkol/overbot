@@ -33,9 +33,8 @@ def responce_text(game, message) -> str:
 def booter(commands=None):
     if commands is None:
         commands = Alias.get_all_aliases()
-        print("a")
 
-    @bot.message_handler(commands=commands)
+    @bot.message_handler(commands=commands + ['over', 'persona'])
     def call_role(message):
         command_parts = message.text.split()
         command = command_parts[0][1:]
@@ -267,18 +266,18 @@ def krylo() -> None:
         pass
 
 
-@bot.message_handler(
-    commands=['max', 'danik', "d+y", 'dy', "yura", "danya", "luka", "krylo", "nikki", "manon", "manonsha", "shidler"])
+@bot.message_handler(commands=[value for result in session.query(Donate.name).all() for value in result[0].split(', ')])
 def points(message):
     name = get_command(message)
-    if name == "manonsha":
-        name = "manon"
-    elif name in ("yura", "danya", "dy", "d+y"):
-        name = "danik"
-    elif name == "krylo":
+    if name == "krylo":
         krylo()
 
+    for record_name in session.query(Donate.name).all():
+        if name in record_name[0].split(', '):
+            name = record_name[0]
+
     record = session.query(Donate).filter(Donate.name == name).first()
+
     if record.remain <= 0:
         bot.delete_message(message.chat.id, message.message_id)
         return
@@ -286,6 +285,7 @@ def points(message):
     answer = f'<a href="tg://user?id={record.id}">{record.tag_name}</a> {random.choice(record.reply.split("*"))}'
 
     if record.media and (record.cnt > record.cooldown):
+        name = name.split(', ')[0]
         random_file = select_random_file(f'botphoto/{name}')
         if random_file[-3:] == "mp4":
             bot.send_animation(message.chat.id, open(random_file, "rb"), caption=answer, parse_mode='HTML')
@@ -301,27 +301,33 @@ def points(message):
     session.commit()
 
 
-@bot.message_handler(commands=['add', 'check'])
+@bot.message_handler(commands=['add'])
 def manage_points(message):
-    command = get_command(message)
     text = get_text(message).split()
     name = text[0]
 
-    if name == "manonsha":
-        name = "manon"
-    elif name in ("yura", "danya", "dy", "d+y"):
-        name = "danik"
+    for record_name in session.query(Donate.name).all():
+        if name in record_name[0].split(', '):
+            name = record_name[0]
 
     if user := session.query(Donate).filter(Donate.name == name).first():
-        if command == "add" and (message.from_user.id == 335762220):  # check if admin:
+        if message.from_user.id == 335762220:  # check if admin:
             amount = int(text[1])
             user.remain += amount
             session.commit()
-            bot.send_message(message.chat.id, f'<b>{name} плюс {amount}. Баланс: {user.remain}</b>',
+            bot.send_message(message.chat.id, f'<b>{user.tag_name} плюс {amount}. Баланс: {user.remain}</b>',
                              parse_mode='HTML')
             bot.delete_message(message.chat.id, message.message_id)
-        elif command == "check":
-            bot.reply_to(message, f'Баланс: {user.remain}', parse_mode='HTML')
+
+
+@bot.message_handler(commands=['check'])
+def manage_points(message):
+    a = session.query(Donate.tag_name, Donate.remain).all()
+    balance = ""
+    for user in a:
+        balance += f"{user[0].split(', ')[0]}: {user[1]}\n"
+
+    bot.reply_to(message, balance, parse_mode='HTML')
 
 
 @bot.message_handler(commands=['register'])

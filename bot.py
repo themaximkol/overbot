@@ -1,7 +1,7 @@
 import telebot
 import random
 from additional import token, select_random_file
-from models import Alias, Role, User, Donate, RoleAlias, session
+from models import Alias, Role, User, Donate, RoleAlias, session, UserRole, UserEmoji
 from errors import *
 from datetime import datetime
 
@@ -60,19 +60,24 @@ def booter(commands=None):
         else:
             bot.reply_to(message, response, parse_mode='HTML')
 
+        i = 0
         if len(user_ids) > 5:
             while len(user_ids) > 5:
-                user_ids = user_ids[5:10]
+                if i + 5 >= len(user_ids):
+                    break
+                users = user_ids[i + 5:min(i + 10, len(user_ids))]
+                print(users, len(users))
 
                 second_response = "".join(
                     [f'<a href="tg://user?id={user_id}">{random.choice(User.get_emojis(user_id=user_id))}</a>ㅤ' for
-                     user_id in user_ids]
+                     user_id in users]
                 )
 
-                if len(user_ids) >= 2:
+                if len(users) >= 2:
                     second_response = second_response[:-1]
 
                 bot.send_message(message.chat.id, second_response, parse_mode='HTML')
+                i += 5
 
 
 @bot.message_handler(commands=['role', 'viewrole'])
@@ -133,7 +138,7 @@ def rmv_roles(message):
         bot.reply_to(message, str(e))
 
 
-@bot.message_handler(commands=['emoji', 'viewemoji'])
+@bot.message_handler(commands=['emoji', 'viewemoji', 'уьщош'])
 def handle_my_emoji(message):
     username = get_text(message)
 
@@ -266,7 +271,9 @@ def krylo() -> None:
         pass
 
 
-@bot.message_handler(commands=[value for result in session.query(Donate.name).all() for value in result[0].split(', ')])
+@bot.message_handler(
+    commands=[value for result in session.query(Donate.name).all() for value in result[0].split(', ') if
+              value != 'all'])
 def points(message):
     name = get_command(message)
     if name == "krylo":
@@ -387,6 +394,75 @@ def all_birthdays(message):
 @bot.message_handler(commands=['test'])
 def test(message):
     bot.send_message(message.chat.id, "🤨")
+
+
+@bot.message_handler(commands=['all'])
+def all_users(message):
+    record = session.query(Donate).filter(Donate.name == 'all').first()
+
+    if record.remain <= 0:
+        bot.delete_message(message.chat.id, message.message_id)
+        return
+
+    user_ids = [user.id for user in session.query(User).all()]
+
+    response = "All users: \n\n" + " ".join(
+        [f'<a href="tg://user?id={user_id}">{random.choice(User.get_emojis(user_id=user_id))}</a>' for user_id in
+         user_ids[:5]]
+    )
+    if message.reply_to_message:
+        bot.reply_to(message.reply_to_message, response, parse_mode='HTML')
+    else:
+        bot.reply_to(message, response, parse_mode='HTML')
+
+    i = 0
+    if len(user_ids) > 5:
+        while len(user_ids) > 5:
+            if i + 5 >= len(user_ids):
+                break
+            users = user_ids[i + 5:min(i + 10, len(user_ids))]
+            print(users, len(users))
+
+            second_response = "".join(
+                [f'<a href="tg://user?id={user_id}">{random.choice(User.get_emojis(user_id=user_id))}</a>ㅤ' for
+                 user_id in users]
+            )
+
+            if len(users) >= 2:
+                second_response = second_response[:-1]
+
+            bot.send_message(message.chat.id, second_response, parse_mode='HTML')
+            i += 5
+    # bot.send_message(message.chat.id, output, parse_mode='HTML')
+    record.remain -= 1
+    session.commit()
+
+
+from sqlalchemy import and_
+
+
+@bot.message_handler(commands=['delete_user'])
+def delete_user(message):
+    user_id = "552126018"
+
+    user = session.query(User).filter(User.id == user_id).first()
+
+    if user:
+
+        session.delete(user)
+
+        tables = [UserRole, UserEmoji]
+        for table in tables:
+            records = session.query(table).filter(table.user_id == user_id).all()
+
+            for record in records:
+                session.delete(record)
+
+        session.commit()
+
+        bot.reply_to(message, "<b>User and related records deleted!</b>", parse_mode='HTML')
+    else:
+        bot.reply_to(message, "<b>User not found!</b>", parse_mode='HTML')
 
 
 if __name__ == "__main__":

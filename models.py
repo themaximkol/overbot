@@ -103,9 +103,8 @@ class Role(Base):
 
 class UserRole(Base):
     __tablename__ = 'user_roles'
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('user.id'))
-    role_id = Column(Integer, ForeignKey('roles.id'))
+    user_id = Column(Integer, ForeignKey('user.id'), primary_key=True)
+    role_id = Column(Integer, ForeignKey('roles.id'), primary_key=True)
 
 
 class UserEmoji(Base):

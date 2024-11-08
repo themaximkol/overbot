@@ -204,7 +204,7 @@ def baka(message):
 @bot.message_handler(
     commands=['bot', 'pack', 'donate', 'donat', 'BOT', 'nicebotmax', 'nicebot', 'NICEBOTMAX', 'NICEBOT'])
 def nicebot(message):
-    link = f'<a href="https://t.me/c/2037387850/157832"><b>Donate</b></a>  |  <a href="https://t.me/c/2037387850/2556"><b>Bot Commands</b></a>  |  <a href="https://t.me/c/2037387850/2558"><b>Sticker Packs</b></a>'
+    link = f'<a href="https://t.me/c/2037387850/324036"><b>Donate</b></a>  |  <a href="https://t.me/c/2037387850/2556"><b>Bot Commands</b></a>  |  <a href="https://t.me/c/2037387850/2558"><b>Sticker Packs</b></a>'
     bot.reply_to(message, link, parse_mode='HTML')
 
 
